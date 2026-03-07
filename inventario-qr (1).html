@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventario QR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --border: #2a2a2a;
+      --text: #f0f0f0;
+      --muted: #666;
+      --entrada: #00e5a0;
+      --salida: #ff4d6d;
+      --disabled: #2a2a2a;
+      --disabled-text: #444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 420px;
+      overflow: hidden;
+      animation: fadeUp 0.4s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-header {
+      padding: 28px 28px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .serial {
+      font-family: 'Space Mono', monospace;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      word-break: break-all;
+      line-height: 1.4;
+    }
+
+    .card-body {
+      padding: 24px 28px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .stat {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 12px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .stat-value.entrada { color: var(--entrada); }
+    .stat-value.salida  { color: var(--salida); }
+    .stat-value.exist   { color: var(--text); }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 14px;
+      padding: 18px 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-icon {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .btn-entrada {
+      background: var(--entrada);
+      color: #0f0f0f;
+    }
+
+    .btn-entrada:hover:not(:disabled) {
+      background: #00ffc3;
+      transform: translateY(-2px);
+    }
+
+    .btn-salida {
+      background: var(--salida);
+      color: #fff;
+    }
+
+    .btn-salida:hover:not(:disabled) {
+      background: #ff6b85;
+      transform: translateY(-2px);
+    }
+
+    .btn:disabled {
+      background: var(--disabled);
+      color: var(--disabled-text);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(0) scale(0.97);
+    }
+
+    .done-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .done-badge::before {
+      content: '✓';
+      color: var(--entrada);
+      font-weight: 700;
+    }
+
+    .message {
+      margin-top: 20px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: center;
+      animation: fadeUp 0.3s ease;
+    }
+
+    .message.success {
+      background: rgba(0, 229, 160, 0.1);
+      border: 1px solid rgba(0, 229, 160, 0.3);
+      color: var(--entrada);
+    }
+
+    .message.error {
+      background: rgba(255, 77, 109, 0.1);
+      border: 1px solid rgba(255, 77, 109, 0.3);
+      color: var(--salida);
+    }
+
+    .message.info {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 60px 28px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--entrada);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .footer {
+      padding: 16px 28px 24px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .footer-text {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+    }
+
+    .completed-banner {
+      background: rgba(0,229,160,0.06);
+      border: 1px solid rgba(0,229,160,0.2);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .completed-banner .icon { font-size: 28px; margin-bottom: 8px; }
+    .completed-banner .title {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      color: var(--entrada);
+      font-weight: 700;
+    }
+    .completed-banner .sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* Token screen */
+    .token-screen {
+      padding: 32px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .token-screen .title {
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .token-screen .sub {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .token-input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      width: 100%;
+      outline: none;
+    }
+
+    .token-input:focus {
+      border-color: var(--entrada);
+    }
+
+    .btn-token {
+      background: var(--entrada);
+      color: #0f0f0f;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .btn-token:hover {
+      background: #00ffc3;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card" id="app">
+  <div class="loading">
+    <div class="spinner"></div>
+    <span>Cargando...</span>
+  </div>
+</div>
+
+<script>
+  // =====================================================
+  // CONFIGURACIÓN
+  // =====================================================
+  const BASE_ID       = 'apph2w5oHNyLLz2Yc';
+  const TABLE_NAME    = 'Series';
+
+  const FIELD_SERIAL  = 'N. Serie (copiar y pegar)';
+  const FIELD_ENTRADA = 'Entrada';
+  const FIELD_SALIDA  = 'Salida';
+  const FIELD_EXIST   = 'Existencia';
+  const FIELD_ALTA_OK = 'Alta aplicada';
+  const FIELD_BAJA_OK = 'Baja aplicada';
+  // =====================================================
+
+  const params = new URLSearchParams(window.location.search);
+  const serial = params.get('serial');
+
+  let recordId   = null;
+  let recordData = null;
+  let AIRTABLE_TOKEN = null;
+
+  // Token: primero intenta sessionStorage, si no pide al usuario
+  function getToken() {
+    const saved = sessionStorage.getItem('airtable_token');
+    if (saved) return saved;
+    return null;
+  }
+
+  function saveToken(token) {
+    sessionStorage.setItem('airtable_token', token);
+  }
+
+  function renderTokenScreen(errorMsg = null) {
+    document.getElementById('app').innerHTML = `
+      <div class="token-screen">
+        <div class="title">🔑 Token de acceso</div>
+        <div class="sub">Ingresa tu token de Airtable para continuar. Solo se pedirá una vez por sesión.</div>
+        ${errorMsg ? `<div class="message error">${errorMsg}</div>` : ''}
+        <input class="token-input" id="tokenInput" type="password" placeholder="patXXXXXXXXXXXXXX..." />
+        <button class="btn-token" onclick="submitToken()">Continuar →</button>
+      </div>
+    `;
+    document.getElementById('tokenInput').focus();
+    document.getElementById('tokenInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') submitToken();
+    });
+  }
+
+  async function submitToken() {
+    const input = document.getElementById('tokenInput').value.trim();
+    if (!input) return;
+    saveToken(input);
+    AIRTABLE_TOKEN = input;
+    await init();
+  }
+
+  async function airtableRequest(method, path, body) {
+    const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}${path}`, {
+      method,
+      headers: {
+        'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    if (res.status === 401 || res.status === 403) {
+      sessionStorage.removeItem('airtable_token');
+      throw new Error('TOKEN_INVALID');
+    }
+    if (!res.ok) throw new Error(`Airtable error: ${res.status}`);
+    return res.json();
+  }
+
+  async function fetchRecord() {
+    const data = await airtableRequest('GET',
+      `?filterByFormula={${FIELD_SERIAL}}="${serial}"&maxRecords=1`
+    );
+    if (!data.records || data.records.length === 0) throw new Error('Registro no encontrado');
+    return data.records[0];
+  }
+
+  async function updateRecord(fields) {
+    await airtableRequest('PATCH', `/${recordId}`, { fields });
+  }
+
+  function getVal(field) {
+    return recordData.fields[field] || 0;
+  }
+
+  function getBool(field) {
+    return recordData.fields[field] === true;
+  }
+
+  function renderApp(message = null, msgType = 'success') {
+    const altaOk  = getBool(FIELD_ALTA_OK);
+    const bajaOk  = getBool(FIELD_BAJA_OK);
+    const entrada = getVal(FIELD_ENTRADA);
+    const salida  = getVal(FIELD_SALIDA);
+    const exist   = getVal(FIELD_EXIST);
+    const ambosUsados = altaOk && bajaOk;
+
+    document.getElementById('app').innerHTML = `
+      <div class="card-header">
+        <div class="label">N. Serie</div>
+        <div class="serial">${serial}</div>
+      </div>
+
+      <div class="card-body">
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-label">Entrada</div>
+            <div class="stat-value entrada">${entrada}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Salida</div>
+            <div class="stat-value salida">${salida}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Existencia</div>
+            <div class="stat-value exist">${exist}</div>
+          </div>
+        </div>
+
+        <div class="buttons">
+          <button class="btn btn-entrada" id="btnAlta" ${altaOk ? 'disabled' : ''} onclick="darDeAlta()">
+            <span class="btn-icon">↑</span>
+            Dar de Alta
+          </button>
+          <button class="btn btn-salida" id="btnBaja" ${bajaOk ? 'disabled' : ''} onclick="darDeBaja()">
+            <span class="btn-icon">↓</span>
+            Dar de Baja
+          </button>
+        </div>
+
+        ${altaOk ? `<div style="text-align:center;margin-top:8px"><span class="done-badge">Alta registrada</span></div>` : ''}
+        ${bajaOk ? `<div style="text-align:center;margin-top:4px"><span class="done-badge">Baja registrada</span></div>` : ''}
+
+        ${message ? `<div class="message ${msgType}">${message}</div>` : ''}
+
+        ${ambosUsados ? `
+          <div class="completed-banner">
+            <div class="icon">✅</div>
+            <div class="title">Unidad completada</div>
+            <div class="sub">Alta y baja ya fueron registradas</div>
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="footer">
+        <div class="footer-text">Inventario ST · ${new Date().toLocaleDateString('es-MX')}</div>
+      </div>
+    `;
+  }
+
+  function renderError(msg) {
+    document.getElementById('app').innerHTML = `
+      <div class="loading">
+        <div style="font-size:32px">⚠️</div>
+        <span style="color:#ff4d6d;font-weight:600;">${msg}</span>
+      </div>
+    `;
+  }
+
+  async function darDeAlta() {
+    document.getElementById('btnAlta').disabled = true;
+    document.getElementById('btnAlta').textContent = '...';
+    try {
+      const entrada = getVal(FIELD_ENTRADA);
+      await updateRecord({
+        [FIELD_ENTRADA]: entrada + 1,
+        [FIELD_ALTA_OK]: true
+      });
+      recordData.fields[FIELD_ENTRADA] = entrada + 1;
+      recordData.fields[FIELD_ALTA_OK] = true;
+      recordData.fields[FIELD_EXIST]   = getVal(FIELD_EXIST) + 1;
+      renderApp('✅ Alta registrada correctamente', 'success');
+    } catch(e) {
+      renderApp('❌ Error al registrar alta', 'error');
+    }
+  }
+
+  async function darDeBaja() {
+    document.getElementById('btnBaja').disabled = true;
+    document.getElementById('btnBaja').textContent = '...';
+    try {
+      const salida = getVal(FIELD_SALIDA);
+      const exist  = getVal(FIELD_EXIST);
+      await updateRecord({
+        [FIELD_SALIDA]: salida + 1,
+        [FIELD_BAJA_OK]: true
+      });
+      recordData.fields[FIELD_SALIDA] = salida + 1;
+      recordData.fields[FIELD_BAJA_OK] = true;
+      recordData.fields[FIELD_EXIST]   = exist - 1;
+      renderApp('✅ Baja registrada correctamente', 'success');
+    } catch(e) {
+      renderApp('❌ Error al registrar baja', 'error');
+    }
+  }
+
+  async function init() {
+    if (!serial) {
+      renderError('No se encontró serial en el QR');
+      return;
+    }
+
+    AIRTABLE_TOKEN = getToken();
+    if (!AIRTABLE_TOKEN) {
+      renderTokenScreen();
+      return;
+    }
+
+    document.getElementById('app').innerHTML = `
+      <div class="loading">
+        <div class="spinner"></div>
+        <span>Cargando producto...</span>
+      </div>
+    `;
+
+    try {
+      const rec = await fetchRecord();
+      recordId   = rec.id;
+      recordData = rec;
+      renderApp();
+    } catch(e) {
+      if (e.message === 'TOKEN_INVALID') {
+        renderTokenScreen('❌ Token inválido, intenta de nuevo');
+      } else {
+        renderError('Producto no encontrado: ' + serial);
+      }
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
