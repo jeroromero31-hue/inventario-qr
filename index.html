@@ -1,346 +1,379 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Inventario QR</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <title>Inventario ST</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0f0f0f;
-      --surface: #1a1a1a;
-      --border: #2a2a2a;
-      --text: #f0f0f0;
-      --muted: #666;
-      --entrada: #00e5a0;
-      --reservado: #f5a623;
-      --salida: #ff4d6d;
-      --disabled: #2a2a2a;
-      --disabled-text: #444;
+      --azul:      #00588f;
+      --azul-dark: #003f6b;
+      --azul-light:#e6f1f8;
+      --blanco:    #ffffff;
+      --gris-bg:   #f4f7fa;
+      --gris-txt:  #5a6a7a;
+      --borde:     #d0dde9;
+      --radius:    14px;
+      --shadow:    0 4px 24px rgba(0,88,143,0.10);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
+      background: var(--gris-bg);
+      font-family: 'Barlow', 'Helvetica Neue', Arial, sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 24px;
+      justify-content: flex-start;
+      padding: 32px 16px 48px;
     }
 
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      width: 100%;
-      max-width: 420px;
-      overflow: hidden;
-      animation: fadeUp 0.4s ease;
-    }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .card-header {
-      padding: 28px 28px 20px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .label {
-      font-family: 'Space Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 2px;
-      color: var(--muted);
-      text-transform: uppercase;
-      margin-bottom: 8px;
-    }
-
-    .serial {
-      font-family: 'Space Mono', monospace;
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--text);
-      word-break: break-all;
-      line-height: 1.4;
-    }
-
-    .card-body { padding: 24px 28px; }
-
-    .stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 12px;
+    /* ── LOGO ── */
+    .logo-wrap {
       margin-bottom: 28px;
+      display: flex;
+      justify-content: center;
+    }
+    .logo-wrap img {
+      height: 72px;
+      width: auto;
+      filter: brightness(0) saturate(100%) invert(26%) sepia(66%) saturate(600%) hue-rotate(177deg) brightness(85%) contrast(110%);
     }
 
-    .stat {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 12px;
-      text-align: center;
+    /* ── CARD ── */
+    .card {
+      background: var(--blanco);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--borde);
+      width: 100%;
+      max-width: 440px;
+      overflow: hidden;
+      animation: fadeUp .45s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(18px); }
+      to   { opacity:1; transform:translateY(0); }
     }
 
-    .stat-label {
+    /* ── HEADER CARD ── */
+    .card-header {
+      background: var(--azul);
+      padding: 20px 24px 18px;
+    }
+    .serial-label {
       font-size: 10px;
-      letter-spacing: 1px;
-      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: .12em;
+      color: rgba(255,255,255,.65);
       text-transform: uppercase;
       margin-bottom: 6px;
     }
-
-    .stat-value {
-      font-family: 'Space Mono', monospace;
+    .serial-value {
       font-size: 22px;
       font-weight: 700;
+      color: var(--blanco);
+      letter-spacing: .02em;
+      word-break: break-all;
+    }
+    .serial-value.not-found {
+      font-size: 16px;
+      color: rgba(255,255,255,.8);
     }
 
-    .stat-value.entrada   { color: var(--entrada); }
-    .stat-value.reservado { color: var(--reservado); }
-    .stat-value.salida    { color: var(--salida); }
-
-    .buttons { display: flex; flex-direction: column; gap: 12px; }
-
-    .btn {
-      border: none;
-      border-radius: 14px;
+    /* ── STATS ROW ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-bottom: 1px solid var(--borde);
+    }
+    .stat-item {
       padding: 18px 12px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
+      text-align: center;
+      border-right: 1px solid var(--borde);
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--gris-txt);
+      margin-bottom: 6px;
+    }
+    .stat-num {
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .stat-num.entrada  { color: #00a86b; }
+    .stat-num.reservado{ color: #e07b00; }
+    .stat-num.salida   { color: #c0392b; }
+
+    /* ── BUTTONS ── */
+    .buttons {
+      padding: 20px 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .btn {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
-    }
-
-    .btn-icon { font-size: 20px; line-height: 1; }
-    .btn-entrada { background: var(--entrada); color: #0f0f0f; }
-    .btn-entrada:hover:not(:disabled) { background: #00ffc3; transform: translateY(-2px); }
-    .btn-reservado { background: var(--reservado); color: #0f0f0f; }
-    .btn-reservado:hover:not(:disabled) { background: #ffbc4d; transform: translateY(-2px); }
-    .btn-salida { background: var(--salida); color: #fff; }
-    .btn-salida:hover:not(:disabled) { background: #ff6b85; transform: translateY(-2px); }
-    .btn:disabled { background: var(--disabled); color: var(--disabled-text); cursor: not-allowed; transform: none; }
-    .btn:active:not(:disabled) { transform: translateY(0) scale(0.97); }
-
-    .done-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 4px;
-    }
-    .done-badge::before { content: '✓ '; color: var(--entrada); font-weight: 700; }
-
-    .message {
-      margin-top: 20px;
-      padding: 14px 16px;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 500;
-      text-align: center;
-    }
-    .message.success { background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.3); color: var(--entrada); }
-    .message.error   { background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.3); color: var(--salida); }
-
-    .loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      padding: 60px 28px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .spinner {
-      width: 36px; height: 36px;
-      border: 3px solid var(--border);
-      border-top-color: var(--entrada);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .footer { padding: 16px 28px 24px; border-top: 1px solid var(--border); text-align: center; }
-    .footer-text { font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
-
-    .completed-banner {
-      background: rgba(0,229,160,0.06);
-      border: 1px solid rgba(0,229,160,0.2);
-      border-radius: 12px;
       padding: 16px;
-      text-align: center;
-      margin-top: 20px;
+      border: none;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: .03em;
+      cursor: pointer;
+      transition: background .2s, transform .12s, opacity .2s;
     }
-    .completed-banner .icon { font-size: 28px; margin-bottom: 8px; }
-    .completed-banner .title { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--entrada); font-weight: 700; }
-    .completed-banner .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .btn:active { transform: scale(.975); }
+
+    /* Botones en azul ST */
+    .btn-entrada   { background: var(--azul); color: #fff; }
+    .btn-reservado { background: var(--azul); color: #fff; }
+    .btn-salida    { background: var(--azul); color: #fff; }
+
+    .btn:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn:not(:disabled):hover { background: var(--azul-dark); }
+
+    /* ── LOADING / ERROR ── */
+    .state-msg {
+      padding: 32px 24px;
+      text-align: center;
+      color: var(--gris-txt);
+      font-size: 15px;
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: var(--azul);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 40px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 6px 24px rgba(0,88,143,.3);
+      opacity: 0;
+      transition: all .35s cubic-bezier(.34,1.56,.64,1);
+      z-index: 999;
+      white-space: nowrap;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .toast.error { background: #c0392b; }
+
+    /* ── FOOTER ── */
+    footer {
+      margin-top: 24px;
+      font-size: 12px;
+      color: #9aaabb;
+      letter-spacing: .04em;
+    }
   </style>
 </head>
 <body>
 
-<div class="card" id="app">
-  <div class="loading">
-    <div class="spinner"></div>
-    <span>Cargando...</span>
+  <!-- LOGO -->
+  <div class="logo-wrap">
+    <img src="https://jeroromero31-hue.github.io/inventario-qr/logo_ST.png"
+         onerror="this.style.display='none'"
+         alt="ST Refrigeración" />
   </div>
-</div>
+
+  <!-- CARD -->
+  <div class="card" id="card">
+    <div class="state-msg" id="loading">Buscando serie…</div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <footer>Inventario ST · <span id="fecha"></span></footer>
 
 <script>
-  const AIRTABLE_TOKEN = 'patOBX4ENq4pyKFWh.b5921054bea69f092bd1d612566b708a2f673f3b79113a43dd21cb9375394035';
-  const BASE_ID        = 'appZvdaRb4ghDI8X9';
+/* ─────────── CONFIG ─────────── */
+const AIRTABLE_TOKEN    = 'patOBX4ENq4pyKFWh.b5921054bea69f092bd1d612566b708a2f673f3b79113a43dd21cb9375394035';
+const BASE_ID           = 'appZvdaRb4ghDI8X9';
+const TABLE_COMPRAS     = 'Compras';
+const FIELD_SERIE_C     = 'Serie';
+const FIELD_ENTRADA_QR  = 'Entrada QR';
+const FIELD_ENTRADA_OK  = 'Entrada aplicada';
+const TABLE_SALIDAS     = 'Salidas';
+const FIELD_SERIE_S     = 'Serie';
+const FIELD_RESERVADO_QR= 'Reservado QR';
+const FIELD_RESERVADO_OK= 'Reservado aplicado';
+const FIELD_SALIDA_QR   = 'Salida QR';
+const FIELD_SALIDA_OK   = 'Salida aplicada';
+/* ─────────────────────────────── */
 
-  const TABLE_COMPRAS       = 'Compras';
-  const FIELD_SERIE_COMPRAS = 'Serie';
-  const FIELD_ENTRADA_QR    = 'Entrada QR';
-  const FIELD_ENTRADA_OK    = 'Entrada aplicada';
+document.getElementById('fecha').textContent =
+  new Date().toLocaleDateString('es-MX', { year:'numeric', month:'numeric', day:'numeric' });
 
-  const TABLE_SALIDAS       = 'Salidas';
-  const FIELD_SERIE_SALIDAS = 'Serie';
-  const FIELD_RESERVADO_QR  = 'Reservado QR';
-  const FIELD_RESERVADO_OK  = 'Reservado aplicado';
-  const FIELD_SALIDA_QR     = 'Salida QR';
-  const FIELD_SALIDA_OK     = 'Salida aplicada';
+const params = new URLSearchParams(window.location.search);
+const serial = params.get('serial');
 
-  const params = new URLSearchParams(window.location.search);
-  const serial = params.get('serial');
+let recCompras = null;
+let recSalidas = null;
 
-  let comprasRecord = null;
-  let salidasRecord = null;
+/* ── Helpers ── */
+const api = (path, method='GET', body=null) => {
+  const opts = {
+    method,
+    headers: {
+      'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
+      'Content-Type':  'application/json'
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  return fetch(`https://api.airtable.com/v0/${BASE_ID}/${path}`, opts).then(r=>r.json());
+};
 
-  async function airtableRequest(method, table, path, body) {
-    const res = await fetch('https://api.airtable.com/v0/' + BASE_ID + '/' + encodeURIComponent(table) + path, {
-      method,
-      headers: {
-        'Authorization': 'Bearer ' + AIRTABLE_TOKEN,
-        'Content-Type': 'application/json'
-      },
-      body: body ? JSON.stringify(body) : undefined
-    });
-    if (!res.ok) throw new Error('Error ' + res.status);
-    return res.json();
+const filterURL = (table, field, value) =>
+  `${encodeURIComponent(table)}?filterByFormula=${encodeURIComponent(`{${field}}="${value}"`)}`;
+
+function showToast(msg, error=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (error ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 2800);
+}
+
+/* ── Render ── */
+function render() {
+  const card = document.getElementById('card');
+
+  if (!serial) {
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="serial-label">N. Serie</div>
+        <div class="serial-value not-found">Sin serie en la URL</div>
+      </div>
+      <div class="state-msg">Escanea el QR de un producto.</div>`;
+    return;
   }
 
-  async function fetchRecords() {
-    const [compras, salidas] = await Promise.all([
-      airtableRequest('GET', TABLE_COMPRAS, '?filterByFormula={' + FIELD_SERIE_COMPRAS + '}="' + serial + '"&maxRecords=1'),
-      airtableRequest('GET', TABLE_SALIDAS, '?filterByFormula={' + FIELD_SERIE_SALIDAS + '}="' + serial + '"&maxRecords=1')
+  const entradaQR   = recCompras?.fields?.[FIELD_ENTRADA_QR]   ?? 0;
+  const entradaOK   = recCompras?.fields?.[FIELD_ENTRADA_OK]   ?? false;
+  const reservadoQR = recSalidas?.fields?.[FIELD_RESERVADO_QR] ?? 0;
+  const reservadoOK = recSalidas?.fields?.[FIELD_RESERVADO_OK] ?? false;
+  const salidaQR    = recSalidas?.fields?.[FIELD_SALIDA_QR]    ?? 0;
+  const salidaOK    = recSalidas?.fields?.[FIELD_SALIDA_OK]    ?? false;
+
+  const disE = !recCompras || entradaOK;
+  const disR = !recSalidas || reservadoOK;
+  const disS = !recSalidas || salidaOK;
+
+  card.innerHTML = `
+    <div class="card-header">
+      <div class="serial-label">N. Serie</div>
+      <div class="serial-value">${serial}</div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-item">
+        <div class="stat-label">Entrada</div>
+        <div class="stat-num entrada">${entradaQR}</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Reservado</div>
+        <div class="stat-num reservado">${reservadoQR}</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Salida</div>
+        <div class="stat-num salida">${salidaQR}</div>
+      </div>
+    </div>
+
+    <div class="buttons">
+      <button class="btn btn-entrada"   id="btnE" ${disE?'disabled':''} onclick="accionEntrada()">📦 Entrada</button>
+      <button class="btn btn-reservado" id="btnR" ${disR?'disabled':''} onclick="accionReservado()">🔒 Reservado</button>
+      <button class="btn btn-salida"    id="btnS" ${disS?'disabled':''} onclick="accionSalida()">🚚 Salida</button>
+    </div>`;
+}
+
+/* ── Acciones ── */
+async function accionEntrada() {
+  if (!recCompras) return;
+  document.getElementById('btnE').disabled = true;
+  const curr = recCompras.fields[FIELD_ENTRADA_QR] ?? 0;
+  await api(`${encodeURIComponent(TABLE_COMPRAS)}/${recCompras.id}`, 'PATCH', {
+    fields: { [FIELD_ENTRADA_QR]: curr+1, [FIELD_ENTRADA_OK]: true }
+  });
+  recCompras.fields[FIELD_ENTRADA_QR] = curr+1;
+  recCompras.fields[FIELD_ENTRADA_OK] = true;
+  render();
+  showToast('✅ Entrada registrada');
+}
+
+async function accionReservado() {
+  if (!recSalidas) return;
+  document.getElementById('btnR').disabled = true;
+  const curr = recSalidas.fields[FIELD_RESERVADO_QR] ?? 0;
+  await api(`${encodeURIComponent(TABLE_SALIDAS)}/${recSalidas.id}`, 'PATCH', {
+    fields: { [FIELD_RESERVADO_QR]: curr+1, [FIELD_RESERVADO_OK]: true }
+  });
+  recSalidas.fields[FIELD_RESERVADO_QR] = curr+1;
+  recSalidas.fields[FIELD_RESERVADO_OK] = true;
+  render();
+  showToast('🔒 Reservado registrado');
+}
+
+async function accionSalida() {
+  if (!recSalidas) return;
+  document.getElementById('btnS').disabled = true;
+  const curr  = recSalidas.fields[FIELD_SALIDA_QR]    ?? 0;
+  const currR = recSalidas.fields[FIELD_RESERVADO_QR]  ?? 0;
+  await api(`${encodeURIComponent(TABLE_SALIDAS)}/${recSalidas.id}`, 'PATCH', {
+    fields: {
+      [FIELD_SALIDA_QR]:    curr+1,
+      [FIELD_SALIDA_OK]:    true,
+      [FIELD_RESERVADO_QR]: Math.max(0, currR-1)
+    }
+  });
+  recSalidas.fields[FIELD_SALIDA_QR]    = curr+1;
+  recSalidas.fields[FIELD_SALIDA_OK]    = true;
+  recSalidas.fields[FIELD_RESERVADO_QR] = Math.max(0, currR-1);
+  render();
+  showToast('🚚 Salida registrada');
+}
+
+/* ── Init ── */
+async function init() {
+  if (!serial) { render(); return; }
+  try {
+    const [rC, rS] = await Promise.all([
+      api(filterURL(TABLE_COMPRAS, FIELD_SERIE_C, serial)),
+      api(filterURL(TABLE_SALIDAS, FIELD_SERIE_S, serial))
     ]);
-    comprasRecord = compras.records && compras.records[0] ? compras.records[0] : null;
-    salidasRecord = salidas.records && salidas.records[0] ? salidas.records[0] : null;
+    recCompras = rC.records?.[0] ?? null;
+    recSalidas = rS.records?.[0] ?? null;
+    render();
+  } catch(e) {
+    document.getElementById('card').innerHTML =
+      `<div class="state-msg">Error al conectar con Airtable.</div>`;
   }
+}
 
-  function getVal(record, field) { return (record && record.fields && record.fields[field]) ? record.fields[field] : 0; }
-  function getBool(record, field) { return record && record.fields && record.fields[field] === true; }
-
-  function renderApp(message, msgType) {
-    const entradaOk   = getBool(comprasRecord, FIELD_ENTRADA_OK);
-    const reservadoOk = getBool(salidasRecord, FIELD_RESERVADO_OK);
-    const salidaOk    = getBool(salidasRecord, FIELD_SALIDA_OK);
-    const entrada     = getVal(comprasRecord, FIELD_ENTRADA_QR);
-    const reservado   = getVal(salidasRecord, FIELD_RESERVADO_QR);
-    const salida      = getVal(salidasRecord, FIELD_SALIDA_QR);
-    const todoOk      = entradaOk && reservadoOk && salidaOk;
-
-    var html = '<div class="card-header"><div class="label">N. Serie</div><div class="serial">' + serial + '</div></div>';
-    html += '<div class="card-body">';
-    html += '<div class="stats">';
-    html += '<div class="stat"><div class="stat-label">Entrada</div><div class="stat-value entrada">' + entrada + '</div></div>';
-    html += '<div class="stat"><div class="stat-label">Reservado</div><div class="stat-value reservado">' + reservado + '</div></div>';
-    html += '<div class="stat"><div class="stat-label">Salida</div><div class="stat-value salida">' + salida + '</div></div>';
-    html += '</div>';
-    html += '<div class="buttons">';
-    html += '<button class="btn btn-entrada" id="btnEntrada" ' + (entradaOk ? 'disabled' : '') + ' onclick="darEntrada()"><span class="btn-icon">📦</span> Entrada</button>';
-    if (entradaOk) html += '<div style="text-align:center"><span class="done-badge">Entrada registrada</span></div>';
-    html += '<button class="btn btn-reservado" id="btnReservado" ' + (reservadoOk ? 'disabled' : '') + ' onclick="darReservado()"><span class="btn-icon">🔒</span> Reservado</button>';
-    if (reservadoOk) html += '<div style="text-align:center"><span class="done-badge">Reservado registrado</span></div>';
-    html += '<button class="btn btn-salida" id="btnSalida" ' + (salidaOk ? 'disabled' : '') + ' onclick="darSalida()"><span class="btn-icon">🚚</span> Salida</button>';
-    if (salidaOk) html += '<div style="text-align:center"><span class="done-badge">Salida registrada</span></div>';
-    html += '</div>';
-    if (message) html += '<div class="message ' + (msgType || 'success') + '">' + message + '</div>';
-    if (todoOk) html += '<div class="completed-banner"><div class="icon">✅</div><div class="title">Ciclo completo</div><div class="sub">Entrada, reservado y salida registrados</div></div>';
-    html += '</div>';
-    html += '<div class="footer"><div class="footer-text">Inventario ST · ' + new Date().toLocaleDateString('es-MX') + '</div></div>';
-
-    document.getElementById('app').innerHTML = html;
-  }
-
-  function renderError(msg) {
-    document.getElementById('app').innerHTML = '<div class="loading"><div style="font-size:32px">⚠️</div><span style="color:#ff4d6d;font-weight:600;">' + msg + '</span></div>';
-  }
-
-  async function darEntrada() {
-    document.getElementById('btnEntrada').disabled = true;
-    document.getElementById('btnEntrada').textContent = '...';
-    try {
-      var val = getVal(comprasRecord, FIELD_ENTRADA_QR);
-      var fields = {};
-      fields[FIELD_ENTRADA_QR] = val + 1;
-      fields[FIELD_ENTRADA_OK] = true;
-      await airtableRequest('PATCH', TABLE_COMPRAS, '/' + comprasRecord.id, { fields: fields });
-      comprasRecord.fields[FIELD_ENTRADA_QR] = val + 1;
-      comprasRecord.fields[FIELD_ENTRADA_OK] = true;
-      renderApp('✅ Entrada registrada', 'success');
-    } catch(e) { renderApp('❌ Error al registrar entrada', 'error'); }
-  }
-
-  async function darReservado() {
-    document.getElementById('btnReservado').disabled = true;
-    document.getElementById('btnReservado').textContent = '...';
-    try {
-      var val = getVal(salidasRecord, FIELD_RESERVADO_QR);
-      var fields = {};
-      fields[FIELD_RESERVADO_QR] = val + 1;
-      fields[FIELD_RESERVADO_OK] = true;
-      await airtableRequest('PATCH', TABLE_SALIDAS, '/' + salidasRecord.id, { fields: fields });
-      salidasRecord.fields[FIELD_RESERVADO_QR] = val + 1;
-      salidasRecord.fields[FIELD_RESERVADO_OK] = true;
-      renderApp('✅ Reservado registrado', 'success');
-    } catch(e) { renderApp('❌ Error al registrar reservado', 'error'); }
-  }
-
-  async function darSalida() {
-    document.getElementById('btnSalida').disabled = true;
-    document.getElementById('btnSalida').textContent = '...';
-    try {
-      var valSalida    = getVal(salidasRecord, FIELD_SALIDA_QR);
-      var valReservado = getVal(salidasRecord, FIELD_RESERVADO_QR);
-      var fields = {};
-      fields[FIELD_SALIDA_QR]    = valSalida + 1;
-      fields[FIELD_RESERVADO_QR] = Math.max(0, valReservado - 1);
-      fields[FIELD_SALIDA_OK]    = true;
-      await airtableRequest('PATCH', TABLE_SALIDAS, '/' + salidasRecord.id, { fields: fields });
-      salidasRecord.fields[FIELD_SALIDA_QR]    = valSalida + 1;
-      salidasRecord.fields[FIELD_RESERVADO_QR] = Math.max(0, valReservado - 1);
-      salidasRecord.fields[FIELD_SALIDA_OK]    = true;
-      renderApp('✅ Salida registrada', 'success');
-    } catch(e) { renderApp('❌ Error al registrar salida', 'error'); }
-  }
-
-  async function init() {
-    if (!serial) { renderError('No se encontro serial en el QR'); return; }
-    try {
-      await fetchRecords();
-      if (!comprasRecord && !salidasRecord) throw new Error('no encontrado');
-      renderApp();
-    } catch(e) { renderError('Producto no encontrado: ' + serial); }
-  }
-
-  init();
+init();
 </script>
 </body>
 </html>
