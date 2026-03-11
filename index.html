@@ -1282,14 +1282,23 @@
             const hayEntradas = entradas.length > 0;
             const hayMateriaPrima = entradas.some(e => e.tipo === 'materia-prima');
             
-            // RESERVA: Se habilita con CUALQUIER entrada (Materia Prima o Producto Terminado)
-            document.getElementById('tab-reserva').disabled = !hayEntradas;
+            // RESERVA: Se habilita con CUALQUIER entrada
+            const tabReserva = document.getElementById('tab-reserva');
+            tabReserva.disabled = !hayEntradas;
+            tabReserva.style.opacity = hayEntradas ? '1' : '0.5';
+            tabReserva.style.cursor = hayEntradas ? 'pointer' : 'not-allowed';
             
             // SALIDA A PRODUCCIÓN: Solo para Materia Prima
-            document.getElementById('tab-produccion').disabled = !hayMateriaPrima;
+            const tabProduccion = document.getElementById('tab-produccion');
+            tabProduccion.disabled = !hayMateriaPrima;
+            tabProduccion.style.opacity = hayMateriaPrima ? '1' : '0.5';
+            tabProduccion.style.cursor = hayMateriaPrima ? 'pointer' : 'not-allowed';
             
             // SALIDA: Se habilita con CUALQUIER entrada
-            document.getElementById('tab-salida').disabled = !hayEntradas;
+            const tabSalida = document.getElementById('tab-salida');
+            tabSalida.disabled = !hayEntradas;
+            tabSalida.style.opacity = hayEntradas ? '1' : '0.5';
+            tabSalida.style.cursor = hayEntradas ? 'pointer' : 'not-allowed';
         }
 
         function switchTab(tabName) {
