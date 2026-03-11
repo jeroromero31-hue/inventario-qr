@@ -868,7 +868,8 @@
                         body: JSON.stringify({
                             fields: {
                                 'Entrada QR': cantidad, // LA CANTIDAD (número)
-                                'Entrada aplicada': true
+                                'Entrada aplicada': true,
+                                'Fecha entrada': new Date().toISOString().split('T')[0] // Formato YYYY-MM-DD
                             }
                         })
                     });
