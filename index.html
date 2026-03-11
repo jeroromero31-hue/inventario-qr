@@ -1018,15 +1018,31 @@
         // CARGAR DATOS
         async function cargarDatos() {
             try {
-                const dataEntradas = await window.storage.get('entradas');
-                const dataReservas = await window.storage.get('reservas');
-                const dataSalidaProduccion = await window.storage.get('salidaProduccion');
-                const dataSalidas = await window.storage.get('salidas');
-
-                if (dataEntradas) entradas = JSON.parse(dataEntradas.value);
-                if (dataReservas) reservas = JSON.parse(dataReservas.value);
-                if (dataSalidaProduccion) salidaProduccion = JSON.parse(dataSalidaProduccion.value);
-                if (dataSalidas) salidas = JSON.parse(dataSalidas.value);
+                let dataEntradas, dataReservas, dataSalidaProduccion, dataSalidas;
+                
+                // Verificar si window.storage existe
+                if (typeof window.storage !== 'undefined' && window.storage) {
+                    dataEntradas = await window.storage.get('entradas');
+                    dataReservas = await window.storage.get('reservas');
+                    dataSalidaProduccion = await window.storage.get('salidaProduccion');
+                    dataSalidas = await window.storage.get('salidas');
+                    
+                    if (dataEntradas) entradas = JSON.parse(dataEntradas.value);
+                    if (dataReservas) reservas = JSON.parse(dataReservas.value);
+                    if (dataSalidaProduccion) salidaProduccion = JSON.parse(dataSalidaProduccion.value);
+                    if (dataSalidas) salidas = JSON.parse(dataSalidas.value);
+                } else {
+                    // Usar localStorage
+                    const localEntradas = localStorage.getItem('entradas');
+                    const localReservas = localStorage.getItem('reservas');
+                    const localSalidaProduccion = localStorage.getItem('salidaProduccion');
+                    const localSalidas = localStorage.getItem('salidas');
+                    
+                    if (localEntradas) entradas = JSON.parse(localEntradas);
+                    if (localReservas) reservas = JSON.parse(localReservas);
+                    if (localSalidaProduccion) salidaProduccion = JSON.parse(localSalidaProduccion);
+                    if (localSalidas) salidas = JSON.parse(localSalidas);
+                }
 
                 actualizarTodasLasTablas();
                 verificarBloqueos();
@@ -1037,12 +1053,22 @@
 
         async function guardarDatos() {
             try {
-                await window.storage.set('entradas', JSON.stringify(entradas));
-                await window.storage.set('reservas', JSON.stringify(reservas));
-                await window.storage.set('salidaProduccion', JSON.stringify(salidaProduccion));
-                await window.storage.set('salidas', JSON.stringify(salidas));
+                // Verificar si window.storage existe (solo en artifacts de Claude)
+                if (typeof window.storage !== 'undefined' && window.storage) {
+                    await window.storage.set('entradas', JSON.stringify(entradas));
+                    await window.storage.set('reservas', JSON.stringify(reservas));
+                    await window.storage.set('salidaProduccion', JSON.stringify(salidaProduccion));
+                    await window.storage.set('salidas', JSON.stringify(salidas));
+                } else {
+                    // Usar localStorage como alternativa
+                    localStorage.setItem('entradas', JSON.stringify(entradas));
+                    localStorage.setItem('reservas', JSON.stringify(reservas));
+                    localStorage.setItem('salidaProduccion', JSON.stringify(salidaProduccion));
+                    localStorage.setItem('salidas', JSON.stringify(salidas));
+                }
             } catch (error) {
                 console.error('Error al guardar:', error);
+                // No mostrar alert, solo log
             }
         }
 
