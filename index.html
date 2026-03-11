@@ -506,21 +506,23 @@
                     <div class="producto" id="producto-display"></div>
                 </div>
 
-                <div class="form-group" id="grupo-cantidad">
-                    <label>Cantidad de Entrada:</label>
-                    <input type="number" id="cantidad-entrada" placeholder="Ej: 100" step="0.01">
-                </div>
+                <div id="campos-materia-prima" style="display: block;">
+                    <div class="form-group" id="grupo-cantidad">
+                        <label>Cantidad de Entrada:</label>
+                        <input type="number" id="cantidad-entrada" placeholder="Ej: 100" step="0.01">
+                    </div>
 
-                <div class="form-group" id="grupo-unidad">
-                    <label>Unidad de Medida:</label>
-                    <select id="unidad-entrada">
-                        <option value="pzas">Piezas (pzas)</option>
-                        <option value="metros">Metros (m)</option>
-                        <option value="kg">Kilogramos (kg)</option>
-                        <option value="litros">Litros (L)</option>
-                        <option value="set">Set</option>
-                        <option value="PZA">PZA</option>
-                    </select>
+                    <div class="form-group" id="grupo-unidad">
+                        <label>Unidad de Medida:</label>
+                        <select id="unidad-entrada">
+                            <option value="pzas">Piezas (pzas)</option>
+                            <option value="metros">Metros (m)</option>
+                            <option value="kg">Kilogramos (kg)</option>
+                            <option value="litros">Litros (L)</option>
+                            <option value="set">Set</option>
+                            <option value="PZA">PZA</option>
+                        </select>
+                    </div>
                 </div>
 
 
@@ -800,6 +802,7 @@
         const AIRTABLE_TOKEN = 'patOBX4ENq4pyKFWh.61829f74421172faa788bbe4974ddfe638b5c8c876aa9a41959096a13afe41cc';
         const BASE_ID = 'appZvdaRb4ghDI8X9';
         const TABLE_COMPRAS = 'Compras';
+        const TABLE_SALIDAS = 'Salidas';
 
         // DATOS
         let tipoSeleccionado = null;
@@ -808,6 +811,175 @@
         let salidaProduccion = [];
         let salidas = [];
         let productosCache = {};
+
+        // FUNCIÓN PARA ACTUALIZAR AIRTABLE (COMPRAS - ENTRADA)
+        async function registrarEntradaEnAirtable(serial) {
+            try {
+                // 1. Buscar el registro en COMPRAS por el serial
+                const urlBuscar = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_COMPRAS}?filterByFormula={Serie}='${serial}'&maxRecords=1`;
+                
+                const responseBuscar = await fetch(urlBuscar, {
+                    headers: {
+                        'Authorization': `Bearer ${AIRTABLE_TOKEN}`
+                    }
+                });
+
+                const dataBuscar = await responseBuscar.json();
+                
+                if (dataBuscar.records && dataBuscar.records.length > 0) {
+                    const recordId = dataBuscar.records[0].id;
+                    
+                    // Verificar si ya tiene entrada aplicada
+                    if (dataBuscar.records[0].fields['Entrada aplicada'] === true) {
+                        alert('⚠️ Este producto ya tiene entrada registrada en Airtable');
+                        return false;
+                    }
+                    
+                    // 2. Actualizar el registro
+                    const urlActualizar = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_COMPRAS}/${recordId}`;
+                    
+                    const responseActualizar = await fetch(urlActualizar, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            fields: {
+                                'Entrada QR': serial,
+                                'Entrada aplicada': true,
+                                'Fecha entrada': new Date().toISOString()
+                            }
+                        })
+                    });
+
+                    if (responseActualizar.ok) {
+                        return true;
+                    } else {
+                        console.error('Error al actualizar Airtable');
+                        return false;
+                    }
+                } else {
+                    alert('❌ No se encontró el producto en Airtable (tabla Compras)');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error al registrar entrada en Airtable:', error);
+                alert('❌ Error al conectar con Airtable. Intenta de nuevo.');
+                return false;
+            }
+        }
+
+        // FUNCIÓN PARA CREAR/ACTUALIZAR REGISTRO EN SALIDAS
+        async function actualizarSalidasEnAirtable(serial, datos, tipo) {
+            try {
+                // 1. Buscar si ya existe un registro en SALIDAS para este serial
+                const urlBuscar = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_SALIDAS}?filterByFormula=OR({Entrada QR}='${serial}',{Reservado QR}='${serial}',{Salida a Producción QR}='${serial}',{Salida QR}='${serial}')&maxRecords=1`;
+                
+                const responseBuscar = await fetch(urlBuscar, {
+                    headers: {
+                        'Authorization': `Bearer ${AIRTABLE_TOKEN}`
+                    }
+                });
+
+                const dataBuscar = await responseBuscar.json();
+                
+                let recordId = null;
+                let metodo = 'POST';
+                let url = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_SALIDAS}`;
+                
+                if (dataBuscar.records && dataBuscar.records.length > 0) {
+                    // Ya existe, actualizar
+                    recordId = dataBuscar.records[0].id;
+                    metodo = 'PATCH';
+                    url = `${url}/${recordId}`;
+                }
+
+                // 2. Preparar datos según el tipo de operación
+                let camposActualizar = {};
+                
+                if (tipo === 'reserva') {
+                    // Verificar si ya tiene reserva aplicada
+                    if (dataBuscar.records && dataBuscar.records[0]?.fields['Reservado aplicado'] === true) {
+                        alert('⚠️ Este producto ya tiene reserva registrada');
+                        return false;
+                    }
+                    
+                    camposActualizar = {
+                        'Reservado QR': serial,
+                        'Reservado aplicado': true,
+                        'Cantidad Reservada': datos.cantidadReservada,
+                        'Fecha Reserva': new Date().toISOString()
+                    };
+                }
+                
+                if (tipo === 'salida-produccion') {
+                    // Verificar si ya tiene salida a producción aplicada
+                    if (dataBuscar.records && dataBuscar.records[0]?.fields['Salida a Producción aplicada'] === true) {
+                        alert('⚠️ Este producto ya tiene salida a producción registrada');
+                        return false;
+                    }
+                    
+                    camposActualizar = {
+                        'Salida a Producción QR': serial,
+                        'Salida a Producción aplicada': true,
+                        'Cantidad a Producción': datos.cantidadProduccion,
+                        'Fecha Salida Producción': new Date().toISOString()
+                    };
+                    
+                    // Restar de cantidad reservada si existe
+                    if (dataBuscar.records && dataBuscar.records[0]?.fields['Cantidad Reservada']) {
+                        const reservadoActual = dataBuscar.records[0].fields['Cantidad Reservada'];
+                        camposActualizar['Cantidad Reservada'] = Math.max(0, reservadoActual - datos.cantidadProduccion);
+                    }
+                    
+                    // Subir foto si existe
+                    if (datos.foto) {
+                        camposActualizar['Evidencia de entregado a producción'] = [
+                            {
+                                url: datos.foto
+                            }
+                        ];
+                    }
+                }
+                
+                if (tipo === 'salida') {
+                    // Verificar si ya tiene salida aplicada
+                    if (dataBuscar.records && dataBuscar.records[0]?.fields['Salida aplicada'] === true) {
+                        alert('⚠️ Este producto ya tiene salida registrada');
+                        return false;
+                    }
+                    
+                    camposActualizar = {
+                        'Salida QR': serial,
+                        'Salida aplicada': true,
+                        'Cantidad Salida': datos.cantidadSalida
+                    };
+                }
+
+                // 3. Enviar a Airtable
+                const responseActualizar = await fetch(url, {
+                    method: metodo,
+                    headers: {
+                        'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        fields: camposActualizar
+                    })
+                });
+
+                if (responseActualizar.ok) {
+                    return true;
+                } else {
+                    console.error('Error al actualizar SALIDAS en Airtable');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error al actualizar salidas:', error);
+                return false;
+            }
+        }
 
         // CARGAR DATOS
         async function cargarDatos() {
@@ -904,15 +1076,13 @@
             
             if (tipo === 'materia-prima') {
                 document.getElementById('btn-materia-prima').classList.add('selected');
-                // Mostrar campo cantidad para materia prima
-                document.getElementById('grupo-cantidad').style.display = 'block';
-                document.getElementById('grupo-unidad').style.display = 'block';
+                // Mostrar campos para materia prima
+                document.getElementById('campos-materia-prima').style.display = 'block';
             } else {
                 document.getElementById('btn-producto-terminado').classList.add('selected');
-                // Ocultar campo cantidad para producto terminado (siempre es 1)
-                document.getElementById('grupo-cantidad').style.display = 'none';
-                document.getElementById('grupo-unidad').style.display = 'none';
-                // Setear cantidad a 1 automáticamente
+                // Ocultar completamente los campos para producto terminado
+                document.getElementById('campos-materia-prima').style.display = 'none';
+                // Setear valores automáticos
                 document.getElementById('cantidad-entrada').value = '1';
                 document.getElementById('unidad-entrada').value = 'pzas';
             }
@@ -957,7 +1127,7 @@
         });
 
         // REGISTRAR ENTRADA
-        function registrarEntrada() {
+        async function registrarEntrada() {
             if (!tipoSeleccionado) {
                 alert('⚠️ Por favor selecciona un tipo de producto primero');
                 return;
@@ -989,6 +1159,14 @@
                 return;
             }
 
+            // ENVIAR A AIRTABLE
+            alert('⏳ Registrando entrada en Airtable...');
+            const exito = await registrarEntradaEnAirtable(serial);
+            
+            if (!exito) {
+                return; // Si falla, no continuar
+            }
+
             const entrada = {
                 serial: serial,
                 producto: producto.descripcion,
@@ -1004,7 +1182,7 @@
             actualizarTablaEntradas();
             verificarBloqueos();
             limpiarFormularioEntrada();
-            alert('✅ Entrada registrada correctamente');
+            alert('✅ Entrada registrada correctamente en Airtable');
         }
 
         function limpiarFormularioEntrada() {
@@ -1133,24 +1311,36 @@
                 return;
             }
 
-            const reserva = {
-                serial: serial,
-                producto: entrada.producto,
-                cantidad: cantidad,
-                unidad: entrada.unidad,
-                orden: orden,
-                cliente: cliente,
-                notas: notas,
-                fecha: new Date().toLocaleString('es-MX'),
-                estado: 'Reservado'
-            };
+            // ENVIAR A AIRTABLE
+            (async () => {
+                alert('⏳ Registrando reserva en Airtable...');
+                const exito = await actualizarSalidasEnAirtable(serial, {
+                    cantidadReservada: cantidad
+                }, 'reserva');
+                
+                if (!exito) {
+                    return;
+                }
 
-            reservas.push(reserva);
-            guardarDatos();
-            actualizarTablaReservas();
-            actualizarResumen();
-            limpiarFormularioReserva();
-            alert('✅ Reserva registrada correctamente');
+                const reserva = {
+                    serial: serial,
+                    producto: entrada.producto,
+                    cantidad: cantidad,
+                    unidad: entrada.unidad,
+                    orden: orden,
+                    cliente: cliente,
+                    notas: notas,
+                    fecha: new Date().toLocaleString('es-MX'),
+                    estado: 'Reservado'
+                };
+
+                reservas.push(reserva);
+                guardarDatos();
+                actualizarTablaReservas();
+                actualizarResumen();
+                limpiarFormularioReserva();
+                alert('✅ Reserva registrada correctamente en Airtable');
+            })();
         }
 
         function limpiarFormularioReserva() {
@@ -1257,7 +1447,18 @@
             }
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
+                // ENVIAR A AIRTABLE CON FOTO
+                alert('⏳ Subiendo foto y registrando salida a producción en Airtable...');
+                const exito = await actualizarSalidasEnAirtable(serial, {
+                    cantidadProduccion: cantidad,
+                    foto: e.target.result
+                }, 'salida-produccion');
+                
+                if (!exito) {
+                    return;
+                }
+
                 const produccion = {
                     serial: serial,
                     producto: entrada.producto,
@@ -1276,7 +1477,7 @@
                 actualizarTablaProduccion();
                 actualizarResumen();
                 limpiarFormularioProduccion();
-                alert('✅ Salida a producción registrada correctamente');
+                alert('✅ Salida a producción registrada correctamente en Airtable (con foto)');
             };
             reader.readAsDataURL(foto);
         }
@@ -1382,27 +1583,39 @@
                 }
             }
 
-            const salida = {
-                serial: serial,
-                producto: entrada.producto,
-                cantidad: cantidad,
-                unidad: entrada.unidad,
-                tipoSalida: produccionAplicada ? 'Producción' : 'Directa',
-                produccionAplicada: produccionAplicada,
-                cliente: cliente,
-                factura: factura,
-                transportista: transportista,
-                notas: notas,
-                fecha: new Date().toLocaleString('es-MX'),
-                estado: 'Entregado'
-            };
+            // ENVIAR A AIRTABLE
+            (async () => {
+                alert('⏳ Registrando salida en Airtable...');
+                const exito = await actualizarSalidasEnAirtable(serial, {
+                    cantidadSalida: cantidad
+                }, 'salida');
+                
+                if (!exito) {
+                    return;
+                }
 
-            salidas.push(salida);
-            guardarDatos();
-            actualizarTablaSalidas();
-            actualizarResumen();
-            limpiarFormularioSalida();
-            alert('✅ Salida registrada correctamente');
+                const salida = {
+                    serial: serial,
+                    producto: entrada.producto,
+                    cantidad: cantidad,
+                    unidad: entrada.unidad,
+                    tipoSalida: produccionAplicada ? 'Producción' : 'Directa',
+                    produccionAplicada: produccionAplicada,
+                    cliente: cliente,
+                    factura: factura,
+                    transportista: transportista,
+                    notas: notas,
+                    fecha: new Date().toLocaleString('es-MX'),
+                    estado: 'Entregado'
+                };
+
+                salidas.push(salida);
+                guardarDatos();
+                actualizarTablaSalidas();
+                actualizarResumen();
+                limpiarFormularioSalida();
+                alert('✅ Salida registrada correctamente en Airtable');
+            })();
         }
 
         function limpiarFormularioSalida() {
