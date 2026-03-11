@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -524,15 +525,7 @@
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label>Proveedor:</label>
-                    <input type="text" id="proveedor-entrada" placeholder="Nombre del proveedor">
-                </div>
 
-                <div class="form-group">
-                    <label>Notas:</label>
-                    <textarea id="notas-entrada" rows="3" placeholder="Observaciones adicionales..."></textarea>
-                </div>
 
                 <button class="btn btn-primary" onclick="registrarEntrada()">✅ Registrar Entrada</button>
                 <button class="btn btn-warning" onclick="limpiarFormularioEntrada()">🔄 Limpiar</button>
@@ -548,7 +541,6 @@
                             <th>Tipo</th>
                             <th>Cantidad</th>
                             <th>Unidad</th>
-                            <th>Proveedor</th>
                             <th>Fecha</th>
                             <th>Estado</th>
                         </tr>
@@ -951,10 +943,8 @@
             const serial = document.getElementById('scanner-entrada').value.trim();
             const cantidad = parseFloat(document.getElementById('cantidad-entrada').value);
             const unidad = document.getElementById('unidad-entrada').value;
-            const proveedor = document.getElementById('proveedor-entrada').value.trim();
-            const notas = document.getElementById('notas-entrada').value.trim();
 
-            if (!serial || !cantidad || !proveedor) {
+            if (!serial || !cantidad) {
                 alert('⚠️ Por favor completa todos los campos obligatorios');
                 return;
             }
@@ -976,8 +966,6 @@
                 tipo: tipoSeleccionado,
                 cantidad: cantidad,
                 unidad: unidad,
-                proveedor: proveedor,
-                notas: notas,
                 fecha: new Date().toLocaleString('es-MX'),
                 estado: 'En Almacén'
             };
@@ -993,8 +981,6 @@
         function limpiarFormularioEntrada() {
             document.getElementById('scanner-entrada').value = '';
             document.getElementById('cantidad-entrada').value = '';
-            document.getElementById('proveedor-entrada').value = '';
-            document.getElementById('notas-entrada').value = '';
             document.getElementById('descripcion-entrada').classList.remove('active');
             tipoSeleccionado = null;
             document.getElementById('btn-materia-prima').classList.remove('selected');
@@ -1018,7 +1004,6 @@
                     <td>${tipoIcon} ${tipoTexto}</td>
                     <td>${entrada.cantidad}</td>
                     <td>${entrada.unidad}</td>
-                    <td>${entrada.proveedor}</td>
                     <td>${entrada.fecha}</td>
                     <td><span class="status-badge status-entrada">${entrada.estado}</span></td>
                 `;
@@ -1473,7 +1458,49 @@
             actualizarResumen();
         }
 
+        // AUTO-DETECTAR SERIAL DE LA URL AL CARGAR
+        async function detectarSerialDeURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const serial = urlParams.get('serial');
+            
+            if (serial) {
+                console.log('Serial detectado en URL:', serial);
+                
+                // Verificar si ya existe
+                const existe = entradas.find(ent => ent.serial === serial);
+                if (existe) {
+                    alert('⚠️ Este código QR ya fue registrado en ENTRADA el ' + existe.fecha);
+                    return;
+                }
+                
+                // Poner el serial en el input
+                document.getElementById('scanner-entrada').value = serial;
+                
+                // Buscar en Airtable
+                document.getElementById('loading-entrada').style.display = 'block';
+                const producto = await buscarProductoEnAirtable(serial);
+                document.getElementById('loading-entrada').style.display = 'none';
+                
+                if (producto) {
+                    // Mostrar descripción
+                    document.getElementById('descripcion-entrada').classList.add('active');
+                    document.getElementById('serial-display').textContent = `Serial: ${producto.serial}`;
+                    document.getElementById('producto-display').textContent = producto.descripcion;
+                    
+                    // Mostrar formulario (sin tipo seleccionado)
+                    alert('✅ Producto encontrado: ' + producto.descripcion + '\n\nAhora selecciona el tipo de producto (Materia Prima o Producto Terminado)');
+                } else {
+                    alert('⚠️ No se encontró un producto con este serial en la base de datos');
+                }
+            }
+        }
+
         cargarDatos();
+        
+        // Detectar serial de URL después de cargar datos
+        setTimeout(() => {
+            detectarSerialDeURL();
+        }, 500);
     </script>
 </body>
 </html>
