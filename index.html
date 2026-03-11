@@ -1,379 +1,1204 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Inventario ST</title>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --azul:      #00588f;
-      --azul-dark: #003f6b;
-      --azul-light:#e6f1f8;
-      --blanco:    #ffffff;
-      --gris-bg:   #f4f7fa;
-      --gris-txt:  #5a6a7a;
-      --borde:     #d0dde9;
-      --radius:    14px;
-      --shadow:    0 4px 24px rgba(0,88,143,0.10);
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Inventario - Almacén a Cliente</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
 
-    body {
-      background: var(--gris-bg);
-      font-family: 'Barlow', 'Helvetica Neue', Arial, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 32px 16px 48px;
-    }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
 
-    /* ── LOGO ── */
-    .logo-wrap {
-      margin-bottom: 28px;
-      display: flex;
-      justify-content: center;
-    }
-    .logo-wrap img {
-      height: 72px;
-      width: auto;
-      filter: brightness(0) saturate(100%) invert(26%) sepia(66%) saturate(600%) hue-rotate(177deg) brightness(85%) contrast(110%);
-    }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
 
-    /* ── CARD ── */
-    .card {
-      background: var(--blanco);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      border: 1px solid var(--borde);
-      width: 100%;
-      max-width: 440px;
-      overflow: hidden;
-      animation: fadeUp .45s ease both;
-    }
-    @keyframes fadeUp {
-      from { opacity:0; transform:translateY(18px); }
-      to   { opacity:1; transform:translateY(0); }
-    }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
 
-    /* ── HEADER CARD ── */
-    .card-header {
-      background: var(--azul);
-      padding: 20px 24px 18px;
-    }
-    .serial-label {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: .12em;
-      color: rgba(255,255,255,.65);
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-    .serial-value {
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--blanco);
-      letter-spacing: .02em;
-      word-break: break-all;
-    }
-    .serial-value.not-found {
-      font-size: 16px;
-      color: rgba(255,255,255,.8);
-    }
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 3px solid #667eea;
+        }
 
-    /* ── STATS ROW ── */
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      border-bottom: 1px solid var(--borde);
-    }
-    .stat-item {
-      padding: 18px 12px;
-      text-align: center;
-      border-right: 1px solid var(--borde);
-    }
-    .stat-item:last-child { border-right: none; }
-    .stat-label {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      color: var(--gris-txt);
-      margin-bottom: 6px;
-    }
-    .stat-num {
-      font-size: 26px;
-      font-weight: 700;
-      line-height: 1;
-    }
-    .stat-num.entrada  { color: #00a86b; }
-    .stat-num.reservado{ color: #e07b00; }
-    .stat-num.salida   { color: #c0392b; }
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            background: #e9ecef;
+            border: none;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: all 0.3s;
+            position: relative;
+        }
 
-    /* ── BUTTONS ── */
-    .buttons {
-      padding: 20px 20px 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 16px;
-      border: none;
-      border-radius: var(--radius);
-      font-family: inherit;
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: .03em;
-      cursor: pointer;
-      transition: background .2s, transform .12s, opacity .2s;
-    }
-    .btn:active { transform: scale(.975); }
+        .tab:hover:not(:disabled) {
+            background: #dee2e6;
+        }
 
-    /* Botones en azul ST */
-    .btn-entrada   { background: var(--azul); color: #fff; }
-    .btn-reservado { background: var(--azul); color: #fff; }
-    .btn-salida    { background: var(--azul); color: #fff; }
+        .tab.active {
+            background: white;
+            color: #667eea;
+        }
 
-    .btn:disabled {
-      opacity: .35;
-      cursor: not-allowed;
-      transform: none;
-    }
-    .btn:not(:disabled):hover { background: var(--azul-dark); }
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #667eea;
+        }
 
-    /* ── LOADING / ERROR ── */
-    .state-msg {
-      padding: 32px 24px;
-      text-align: center;
-      color: var(--gris-txt);
-      font-size: 15px;
-    }
+        .tab:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: #f1f1f1;
+        }
 
-    /* ── TOAST ── */
-    .toast {
-      position: fixed;
-      bottom: 28px;
-      left: 50%;
-      transform: translateX(-50%) translateY(60px);
-      background: var(--azul);
-      color: #fff;
-      padding: 12px 24px;
-      border-radius: 40px;
-      font-size: 14px;
-      font-weight: 600;
-      box-shadow: 0 6px 24px rgba(0,88,143,.3);
-      opacity: 0;
-      transition: all .35s cubic-bezier(.34,1.56,.64,1);
-      z-index: 999;
-      white-space: nowrap;
-    }
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-    .toast.error { background: #c0392b; }
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
 
-    /* ── FOOTER ── */
-    footer {
-      margin-top: 24px;
-      font-size: 12px;
-      color: #9aaabb;
-      letter-spacing: .04em;
-    }
-  </style>
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input:disabled, select:disabled, textarea:disabled {
+            background: #e9ecef;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            opacity: 0.6;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-entrada {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-reserva {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-produccion {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .status-salida {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+            color: #0c5460;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+        }
+
+        .scanner-input {
+            font-size: 1.2em;
+            font-weight: bold;
+            border: 3px solid #667eea !important;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .preview-image {
+            max-width: 200px;
+            max-height: 200px;
+            margin-top: 10px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .info-box strong {
+            color: #1976D2;
+        }
+
+        @media (max-width: 768px) {
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                flex: 1 1 50%;
+            }
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <div class="header">
+            <h1>🏭 Sistema de Inventario</h1>
+            <p>Control de Almacén → Producción → Cliente</p>
+        </div>
 
-  <!-- LOGO -->
-  <div class="logo-wrap">
-    <img src="https://jeroromero31-hue.github.io/inventario-qr/logo_ST.png"
-         onerror="this.style.display='none'"
-         alt="ST Refrigeración" />
-  </div>
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('entrada')">📦 Entrada</button>
+            <button class="tab" id="tab-reserva" onclick="switchTab('reserva')" disabled>📋 Reserva</button>
+            <button class="tab" id="tab-produccion" onclick="switchTab('produccion')" disabled>🏭 Salida a Producción</button>
+            <button class="tab" id="tab-salida" onclick="switchTab('salida')" disabled>🚚 Salida a Cliente</button>
+            <button class="tab" onclick="switchTab('resumen')">📊 Resumen</button>
+        </div>
 
-  <!-- CARD -->
-  <div class="card" id="card">
-    <div class="state-msg" id="loading">Buscando serie…</div>
-  </div>
+        <!-- TAB: ENTRADA -->
+        <div id="tab-entrada" class="tab-content active">
+            <h2>📦 Registro de Entrada al Almacén</h2>
+            
+            <div class="form-section">
+                <div class="form-group">
+                    <label>Escanea el Código QR:</label>
+                    <input type="text" id="scanner-entrada" class="scanner-input" placeholder="Escanea aquí..." autofocus>
+                </div>
 
-  <div class="toast" id="toast"></div>
+                <div class="form-group">
+                    <label>Producto:</label>
+                    <input type="text" id="producto-entrada" placeholder="Ej: Cable THHN calibre 12">
+                </div>
 
-  <footer>Inventario ST · <span id="fecha"></span></footer>
+                <div class="form-group">
+                    <label>Lote:</label>
+                    <input type="text" id="lote-entrada" placeholder="Ej: LOTE-2024-001">
+                </div>
 
-<script>
-/* ─────────── CONFIG ─────────── */
-const AIRTABLE_TOKEN    = 'patOBX4ENq4pyKFWh.b5921054bea69f092bd1d612566b708a2f673f3b79113a43dd21cb9375394035';
-const BASE_ID           = 'appZvdaRb4ghDI8X9';
-const TABLE_COMPRAS     = 'Compras';
-const FIELD_SERIE_C     = 'Serie';
-const FIELD_ENTRADA_QR  = 'Entrada QR';
-const FIELD_ENTRADA_OK  = 'Entrada aplicada';
-const TABLE_SALIDAS     = 'Salidas';
-const FIELD_SERIE_S     = 'Serie';
-const FIELD_RESERVADO_QR= 'Reservado QR';
-const FIELD_RESERVADO_OK= 'Reservado aplicado';
-const FIELD_SALIDA_QR   = 'Salida QR';
-const FIELD_SALIDA_OK   = 'Salida aplicada';
-/* ─────────────────────────────── */
+                <div class="form-group">
+                    <label>Embalaje:</label>
+                    <input type="text" id="embalaje-entrada" placeholder="Ej: Caja de cartón">
+                </div>
 
-document.getElementById('fecha').textContent =
-  new Date().toLocaleDateString('es-MX', { year:'numeric', month:'numeric', day:'numeric' });
+                <div class="form-group">
+                    <label>Cantidad de Entrada:</label>
+                    <input type="number" id="cantidad-entrada" placeholder="Ej: 100" step="0.01">
+                </div>
 
-const params = new URLSearchParams(window.location.search);
-const serial = params.get('serial');
+                <div class="form-group">
+                    <label>Unidad de Medida:</label>
+                    <select id="unidad-entrada">
+                        <option value="pzas">Piezas (pzas)</option>
+                        <option value="metros">Metros (m)</option>
+                        <option value="kg">Kilogramos (kg)</option>
+                        <option value="litros">Litros (L)</option>
+                    </select>
+                </div>
 
-let recCompras = null;
-let recSalidas = null;
+                <div class="form-group">
+                    <label>Proveedor:</label>
+                    <input type="text" id="proveedor-entrada" placeholder="Nombre del proveedor">
+                </div>
 
-/* ── Helpers ── */
-const api = (path, method='GET', body=null) => {
-  const opts = {
-    method,
-    headers: {
-      'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
-      'Content-Type':  'application/json'
-    }
-  };
-  if (body) opts.body = JSON.stringify(body);
-  return fetch(`https://api.airtable.com/v0/${BASE_ID}/${path}`, opts).then(r=>r.json());
-};
+                <div class="form-group">
+                    <label>Notas:</label>
+                    <textarea id="notas-entrada" rows="3" placeholder="Observaciones adicionales..."></textarea>
+                </div>
 
-const filterURL = (table, field, value) =>
-  `${encodeURIComponent(table)}?filterByFormula=${encodeURIComponent(`{${field}}="${value}"`)}`;
+                <button class="btn btn-primary" onclick="registrarEntrada()">✅ Registrar Entrada</button>
+                <button class="btn btn-warning" onclick="limpiarFormularioEntrada()">🔄 Limpiar</button>
+            </div>
 
-function showToast(msg, error=false) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show' + (error ? ' error' : '');
-  setTimeout(() => t.className = 'toast', 2800);
-}
+            <div class="table-container">
+                <h3>Entradas Registradas</h3>
+                <table id="tabla-entradas">
+                    <thead>
+                        <tr>
+                            <th>Código QR</th>
+                            <th>Producto</th>
+                            <th>Lote</th>
+                            <th>Embalaje</th>
+                            <th>Cantidad</th>
+                            <th>Unidad</th>
+                            <th>Proveedor</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-entradas"></tbody>
+                </table>
+            </div>
+        </div>
 
-/* ── Render ── */
-function render() {
-  const card = document.getElementById('card');
+        <!-- TAB: RESERVA -->
+        <div id="tab-reserva" class="tab-content">
+            <h2>📋 Reserva de Material</h2>
+            
+            <div class="alert alert-info">
+                <strong>ℹ️ Información:</strong> Aparta material para una orden específica. Solo se pueden reservar productos que tengan entrada registrada.
+            </div>
 
-  if (!serial) {
-    card.innerHTML = `
-      <div class="card-header">
-        <div class="serial-label">N. Serie</div>
-        <div class="serial-value not-found">Sin serie en la URL</div>
-      </div>
-      <div class="state-msg">Escanea el QR de un producto.</div>`;
-    return;
-  }
+            <div class="form-section">
+                <div class="form-group">
+                    <label>Escanea el Código QR:</label>
+                    <input type="text" id="scanner-reserva" class="scanner-input" placeholder="Escanea aquí...">
+                </div>
 
-  const entradaQR   = recCompras?.fields?.[FIELD_ENTRADA_QR]   ?? 0;
-  const entradaOK   = recCompras?.fields?.[FIELD_ENTRADA_OK]   ?? false;
-  const reservadoQR = recSalidas?.fields?.[FIELD_RESERVADO_QR] ?? 0;
-  const reservadoOK = recSalidas?.fields?.[FIELD_RESERVADO_OK] ?? false;
-  const salidaQR    = recSalidas?.fields?.[FIELD_SALIDA_QR]    ?? 0;
-  const salidaOK    = recSalidas?.fields?.[FIELD_SALIDA_OK]    ?? false;
+                <div class="info-box" id="info-reserva" style="display:none;"></div>
 
-  const disE = !recCompras || entradaOK;
-  const disR = !recSalidas || reservadoOK;
-  const disS = !recSalidas || salidaOK;
+                <div class="form-group">
+                    <label>Cantidad a Reservar:</label>
+                    <input type="number" id="cantidad-reserva" placeholder="Cantidad" step="0.01">
+                </div>
 
-  card.innerHTML = `
-    <div class="card-header">
-      <div class="serial-label">N. Serie</div>
-      <div class="serial-value">${serial}</div>
+                <div class="form-group">
+                    <label>Número de Orden:</label>
+                    <input type="text" id="orden-reserva" placeholder="Ej: OP-2024-001">
+                </div>
+
+                <div class="form-group">
+                    <label>Cliente/Proyecto:</label>
+                    <input type="text" id="cliente-reserva" placeholder="Nombre del cliente o proyecto">
+                </div>
+
+                <div class="form-group">
+                    <label>Notas:</label>
+                    <textarea id="notas-reserva" rows="3" placeholder="Observaciones..."></textarea>
+                </div>
+
+                <button class="btn btn-primary" onclick="registrarReserva()">📋 Registrar Reserva</button>
+                <button class="btn btn-warning" onclick="limpiarFormularioReserva()">🔄 Limpiar</button>
+            </div>
+
+            <div class="table-container">
+                <h3>Reservas Registradas</h3>
+                <table id="tabla-reservas">
+                    <thead>
+                        <tr>
+                            <th>Código QR</th>
+                            <th>Producto</th>
+                            <th>Cantidad Reservada</th>
+                            <th>Unidad</th>
+                            <th>Orden</th>
+                            <th>Cliente/Proyecto</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-reservas"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB: SALIDA A PRODUCCIÓN -->
+        <div id="tab-produccion" class="tab-content">
+            <h2>🏭 Salida a Producción</h2>
+            
+            <div class="alert alert-warning">
+                <strong>⚠️ Importante:</strong> Registra la entrega física del material a producción. Incluye foto de la entrega.
+            </div>
+
+            <div class="form-section">
+                <div class="form-group">
+                    <label>Escanea el Código QR:</label>
+                    <input type="text" id="scanner-produccion" class="scanner-input" placeholder="Escanea aquí...">
+                </div>
+
+                <div class="info-box" id="info-produccion" style="display:none;"></div>
+
+                <div class="form-group">
+                    <label>Cantidad que Sale a Producción:</label>
+                    <input type="number" id="cantidad-produccion" placeholder="Cantidad" step="0.01">
+                </div>
+
+                <div class="form-group">
+                    <label>Número de Orden de Producción:</label>
+                    <input type="text" id="orden-produccion" placeholder="Ej: OP-2024-001">
+                </div>
+
+                <div class="form-group">
+                    <label>Responsable en Producción:</label>
+                    <input type="text" id="responsable-produccion" placeholder="Nombre del responsable">
+                </div>
+
+                <div class="form-group">
+                    <label>Foto de Entrega:</label>
+                    <input type="file" id="foto-produccion" accept="image/*" capture="environment" onchange="previewFoto('produccion')">
+                    <img id="preview-produccion" class="preview-image" style="display:none;">
+                </div>
+
+                <div class="form-group">
+                    <label>Notas:</label>
+                    <textarea id="notas-produccion" rows="3" placeholder="Observaciones de la entrega..."></textarea>
+                </div>
+
+                <button class="btn btn-primary" onclick="registrarSalidaProduccion()">🏭 Registrar Salida a Producción</button>
+                <button class="btn btn-warning" onclick="limpiarFormularioProduccion()">🔄 Limpiar</button>
+            </div>
+
+            <div class="table-container">
+                <h3>Salidas a Producción</h3>
+                <table id="tabla-produccion">
+                    <thead>
+                        <tr>
+                            <th>Código QR</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Unidad</th>
+                            <th>Orden</th>
+                            <th>Responsable</th>
+                            <th>Fecha</th>
+                            <th>Foto</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-produccion"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB: SALIDA A CLIENTE -->
+        <div id="tab-salida" class="tab-content">
+            <h2>🚚 Salida a Cliente</h2>
+            
+            <div class="alert alert-danger">
+                <strong>🚚 Salida Final:</strong> Registra cuando el producto sale del almacén hacia el cliente.
+            </div>
+
+            <div class="form-section">
+                <div class="form-group">
+                    <label>Escanea el Código QR:</label>
+                    <input type="text" id="scanner-salida" class="scanner-input" placeholder="Escanea aquí...">
+                </div>
+
+                <div class="info-box" id="info-salida" style="display:none;"></div>
+
+                <div class="form-group">
+                    <label>Cantidad que Sale:</label>
+                    <input type="number" id="cantidad-salida" placeholder="Cantidad" step="0.01">
+                </div>
+
+                <div class="form-group">
+                    <label>Cliente:</label>
+                    <input type="text" id="cliente-salida" placeholder="Nombre del cliente">
+                </div>
+
+                <div class="form-group">
+                    <label>Número de Factura/Remisión:</label>
+                    <input type="text" id="factura-salida" placeholder="Ej: FAC-2024-001">
+                </div>
+
+                <div class="form-group">
+                    <label>Transportista:</label>
+                    <input type="text" id="transportista-salida" placeholder="Nombre del transportista">
+                </div>
+
+                <div class="form-group">
+                    <label>Notas:</label>
+                    <textarea id="notas-salida" rows="3" placeholder="Observaciones de la salida..."></textarea>
+                </div>
+
+                <button class="btn btn-primary" onclick="registrarSalida()">🚚 Registrar Salida a Cliente</button>
+                <button class="btn btn-warning" onclick="limpiarFormularioSalida()">🔄 Limpiar</button>
+            </div>
+
+            <div class="table-container">
+                <h3>Salidas a Cliente</h3>
+                <table id="tabla-salidas">
+                    <thead>
+                        <tr>
+                            <th>Código QR</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Unidad</th>
+                            <th>Cliente</th>
+                            <th>Factura</th>
+                            <th>Transportista</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-salidas"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB: RESUMEN -->
+        <div id="tab-resumen" class="tab-content">
+            <h2>📊 Resumen General del Inventario</h2>
+            
+            <div class="table-container">
+                <h3>Estado del Inventario</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Código QR</th>
+                            <th>Producto</th>
+                            <th>Entrada Total</th>
+                            <th>Reservado</th>
+                            <th>En Producción</th>
+                            <th>Salió a Cliente</th>
+                            <th>Disponible</th>
+                            <th>Unidad</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-resumen"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <div class="stats">
-      <div class="stat-item">
-        <div class="stat-label">Entrada</div>
-        <div class="stat-num entrada">${entradaQR}</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">Reservado</div>
-        <div class="stat-num reservado">${reservadoQR}</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">Salida</div>
-        <div class="stat-num salida">${salidaQR}</div>
-      </div>
-    </div>
+    <script>
+        // Sistema de almacenamiento usando window.storage
+        let entradas = [];
+        let reservas = [];
+        let salidaProduccion = [];
+        let salidas = [];
 
-    <div class="buttons">
-      <button class="btn btn-entrada"   id="btnE" ${disE?'disabled':''} onclick="accionEntrada()">📦 Entrada</button>
-      <button class="btn btn-reservado" id="btnR" ${disR?'disabled':''} onclick="accionReservado()">🔒 Reservado</button>
-      <button class="btn btn-salida"    id="btnS" ${disS?'disabled':''} onclick="accionSalida()">🚚 Salida</button>
-    </div>`;
-}
+        // Cargar datos al iniciar
+        async function cargarDatos() {
+            try {
+                const dataEntradas = await window.storage.get('entradas');
+                const dataReservas = await window.storage.get('reservas');
+                const dataSalidaProduccion = await window.storage.get('salidaProduccion');
+                const dataSalidas = await window.storage.get('salidas');
 
-/* ── Acciones ── */
-async function accionEntrada() {
-  if (!recCompras) return;
-  document.getElementById('btnE').disabled = true;
-  const curr = recCompras.fields[FIELD_ENTRADA_QR] ?? 0;
-  await api(`${encodeURIComponent(TABLE_COMPRAS)}/${recCompras.id}`, 'PATCH', {
-    fields: { [FIELD_ENTRADA_QR]: curr+1, [FIELD_ENTRADA_OK]: true }
-  });
-  recCompras.fields[FIELD_ENTRADA_QR] = curr+1;
-  recCompras.fields[FIELD_ENTRADA_OK] = true;
-  render();
-  showToast('✅ Entrada registrada');
-}
+                if (dataEntradas) entradas = JSON.parse(dataEntradas.value);
+                if (dataReservas) reservas = JSON.parse(dataReservas.value);
+                if (dataSalidaProduccion) salidaProduccion = JSON.parse(dataSalidaProduccion.value);
+                if (dataSalidas) salidas = JSON.parse(dataSalidas.value);
 
-async function accionReservado() {
-  if (!recSalidas) return;
-  document.getElementById('btnR').disabled = true;
-  const curr = recSalidas.fields[FIELD_RESERVADO_QR] ?? 0;
-  await api(`${encodeURIComponent(TABLE_SALIDAS)}/${recSalidas.id}`, 'PATCH', {
-    fields: { [FIELD_RESERVADO_QR]: curr+1, [FIELD_RESERVADO_OK]: true }
-  });
-  recSalidas.fields[FIELD_RESERVADO_QR] = curr+1;
-  recSalidas.fields[FIELD_RESERVADO_OK] = true;
-  render();
-  showToast('🔒 Reservado registrado');
-}
+                actualizarTodasLasTablas();
+                verificarBloqueos();
+            } catch (error) {
+                console.log('Primera carga o error:', error);
+            }
+        }
 
-async function accionSalida() {
-  if (!recSalidas) return;
-  document.getElementById('btnS').disabled = true;
-  const curr  = recSalidas.fields[FIELD_SALIDA_QR]    ?? 0;
-  const currR = recSalidas.fields[FIELD_RESERVADO_QR]  ?? 0;
-  await api(`${encodeURIComponent(TABLE_SALIDAS)}/${recSalidas.id}`, 'PATCH', {
-    fields: {
-      [FIELD_SALIDA_QR]:    curr+1,
-      [FIELD_SALIDA_OK]:    true,
-      [FIELD_RESERVADO_QR]: Math.max(0, currR-1)
-    }
-  });
-  recSalidas.fields[FIELD_SALIDA_QR]    = curr+1;
-  recSalidas.fields[FIELD_SALIDA_OK]    = true;
-  recSalidas.fields[FIELD_RESERVADO_QR] = Math.max(0, currR-1);
-  render();
-  showToast('🚚 Salida registrada');
-}
+        // Guardar datos
+        async function guardarDatos() {
+            try {
+                await window.storage.set('entradas', JSON.stringify(entradas));
+                await window.storage.set('reservas', JSON.stringify(reservas));
+                await window.storage.set('salidaProduccion', JSON.stringify(salidaProduccion));
+                await window.storage.set('salidas', JSON.stringify(salidas));
+            } catch (error) {
+                console.error('Error al guardar:', error);
+            }
+        }
 
-/* ── Init ── */
-async function init() {
-  if (!serial) { render(); return; }
-  try {
-    const [rC, rS] = await Promise.all([
-      api(filterURL(TABLE_COMPRAS, FIELD_SERIE_C, serial)),
-      api(filterURL(TABLE_SALIDAS, FIELD_SERIE_S, serial))
-    ]);
-    recCompras = rC.records?.[0] ?? null;
-    recSalidas = rS.records?.[0] ?? null;
-    render();
-  } catch(e) {
-    document.getElementById('card').innerHTML =
-      `<div class="state-msg">Error al conectar con Airtable.</div>`;
-  }
-}
+        // Verificar si hay entradas y desbloquear tabs
+        function verificarBloqueos() {
+            const hayEntradas = entradas.length > 0;
+            
+            document.getElementById('tab-reserva').disabled = !hayEntradas;
+            document.getElementById('tab-produccion').disabled = !hayEntradas;
+            document.getElementById('tab-salida').disabled = !hayEntradas;
+        }
 
-init();
-</script>
+        // Cambiar entre tabs
+        function switchTab(tabName) {
+            // Ocultar todos los tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Mostrar el tab seleccionado
+            document.getElementById('tab-' + tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // ENTRADA
+        document.getElementById('scanner-entrada').addEventListener('input', function(e) {
+            const qr = e.target.value.trim();
+            if (qr.includes('serial=')) {
+                const serial = qr.split('serial=')[1].split('&')[0] || qr.split('serial=')[1];
+                
+                // Buscar si ya existe en entradas
+                const existe = entradas.find(ent => ent.qr === serial);
+                if (existe) {
+                    alert('⚠️ Este código QR ya fue registrado en ENTRADA el ' + existe.fecha);
+                    e.target.value = '';
+                    return;
+                }
+                
+                e.target.value = serial;
+            }
+        });
+
+        function registrarEntrada() {
+            const qr = document.getElementById('scanner-entrada').value.trim();
+            const producto = document.getElementById('producto-entrada').value.trim();
+            const lote = document.getElementById('lote-entrada').value.trim();
+            const embalaje = document.getElementById('embalaje-entrada').value.trim();
+            const cantidad = parseFloat(document.getElementById('cantidad-entrada').value);
+            const unidad = document.getElementById('unidad-entrada').value;
+            const proveedor = document.getElementById('proveedor-entrada').value.trim();
+            const notas = document.getElementById('notas-entrada').value.trim();
+
+            if (!qr || !producto || !lote || !embalaje || !cantidad || !proveedor) {
+                alert('⚠️ Por favor completa todos los campos obligatorios');
+                return;
+            }
+
+            if (cantidad <= 0) {
+                alert('⚠️ La cantidad debe ser mayor a 0');
+                return;
+            }
+
+            const entrada = {
+                qr: qr,
+                producto: producto,
+                lote: lote,
+                embalaje: embalaje,
+                cantidad: cantidad,
+                unidad: unidad,
+                proveedor: proveedor,
+                notas: notas,
+                fecha: new Date().toLocaleString('es-MX'),
+                estado: 'En Almacén'
+            };
+
+            entradas.push(entrada);
+            guardarDatos();
+            actualizarTablaEntradas();
+            verificarBloqueos();
+            limpiarFormularioEntrada();
+            alert('✅ Entrada registrada correctamente');
+        }
+
+        function limpiarFormularioEntrada() {
+            document.getElementById('scanner-entrada').value = '';
+            document.getElementById('producto-entrada').value = '';
+            document.getElementById('lote-entrada').value = '';
+            document.getElementById('embalaje-entrada').value = '';
+            document.getElementById('cantidad-entrada').value = '';
+            document.getElementById('proveedor-entrada').value = '';
+            document.getElementById('notas-entrada').value = '';
+            document.getElementById('scanner-entrada').focus();
+        }
+
+        function actualizarTablaEntradas() {
+            const tbody = document.getElementById('tbody-entradas');
+            tbody.innerHTML = '';
+
+            entradas.forEach(entrada => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${entrada.qr}</td>
+                    <td>${entrada.producto}</td>
+                    <td>${entrada.lote}</td>
+                    <td>${entrada.embalaje}</td>
+                    <td>${entrada.cantidad}</td>
+                    <td>${entrada.unidad}</td>
+                    <td>${entrada.proveedor}</td>
+                    <td>${entrada.fecha}</td>
+                    <td><span class="status-badge status-entrada">${entrada.estado}</span></td>
+                `;
+            });
+        }
+
+        // RESERVA
+        document.getElementById('scanner-reserva').addEventListener('input', function(e) {
+            const qr = e.target.value.trim();
+            if (qr.includes('serial=')) {
+                const serial = qr.split('serial=')[1].split('&')[0] || qr.split('serial=')[1];
+                e.target.value = serial;
+                mostrarInfoReserva(serial);
+            }
+        });
+
+        function mostrarInfoReserva(qr) {
+            const entrada = entradas.find(ent => ent.qr === qr);
+            const infoBox = document.getElementById('info-reserva');
+
+            if (!entrada) {
+                infoBox.style.display = 'block';
+                infoBox.innerHTML = '<strong>❌ Error:</strong> Este código QR no tiene entrada registrada. Primero debe registrarse en ENTRADA.';
+                infoBox.style.background = '#f8d7da';
+                infoBox.style.borderColor = '#dc3545';
+                return;
+            }
+
+            const disponible = calcularDisponible(qr);
+            infoBox.style.display = 'block';
+            infoBox.style.background = '#e7f3ff';
+            infoBox.style.borderColor = '#2196F3';
+            infoBox.innerHTML = `
+                <strong>📦 Producto:</strong> ${entrada.producto}<br>
+                <strong>📊 Disponible para reservar:</strong> ${disponible} ${entrada.unidad}
+            `;
+        }
+
+        function calcularDisponible(qr) {
+            const entrada = entradas.find(ent => ent.qr === qr);
+            if (!entrada) return 0;
+
+            const totalReservado = reservas
+                .filter(res => res.qr === qr)
+                .reduce((sum, res) => sum + res.cantidad, 0);
+
+            const totalProduccion = salidaProduccion
+                .filter(prod => prod.qr === qr)
+                .reduce((sum, prod) => sum + prod.cantidad, 0);
+
+            const totalSalidas = salidas
+                .filter(sal => sal.qr === qr)
+                .reduce((sum, sal) => sum + sal.cantidad, 0);
+
+            return entrada.cantidad - totalReservado - totalProduccion - totalSalidas;
+        }
+
+        function registrarReserva() {
+            const qr = document.getElementById('scanner-reserva').value.trim();
+            const cantidad = parseFloat(document.getElementById('cantidad-reserva').value);
+            const orden = document.getElementById('orden-reserva').value.trim();
+            const cliente = document.getElementById('cliente-reserva').value.trim();
+            const notas = document.getElementById('notas-reserva').value.trim();
+
+            if (!qr || !cantidad || !orden || !cliente) {
+                alert('⚠️ Por favor completa todos los campos obligatorios');
+                return;
+            }
+
+            const entrada = entradas.find(ent => ent.qr === qr);
+            if (!entrada) {
+                alert('❌ Este código QR no tiene entrada registrada');
+                return;
+            }
+
+            const disponible = calcularDisponible(qr);
+            if (cantidad > disponible) {
+                alert(`❌ No hay suficiente disponible. Disponible: ${disponible} ${entrada.unidad}`);
+                return;
+            }
+
+            const reserva = {
+                qr: qr,
+                producto: entrada.producto,
+                cantidad: cantidad,
+                unidad: entrada.unidad,
+                orden: orden,
+                cliente: cliente,
+                notas: notas,
+                fecha: new Date().toLocaleString('es-MX'),
+                estado: 'Reservado'
+            };
+
+            reservas.push(reserva);
+            guardarDatos();
+            actualizarTablaReservas();
+            actualizarResumen();
+            limpiarFormularioReserva();
+            alert('✅ Reserva registrada correctamente');
+        }
+
+        function limpiarFormularioReserva() {
+            document.getElementById('scanner-reserva').value = '';
+            document.getElementById('cantidad-reserva').value = '';
+            document.getElementById('orden-reserva').value = '';
+            document.getElementById('cliente-reserva').value = '';
+            document.getElementById('notas-reserva').value = '';
+            document.getElementById('info-reserva').style.display = 'none';
+            document.getElementById('scanner-reserva').focus();
+        }
+
+        function actualizarTablaReservas() {
+            const tbody = document.getElementById('tbody-reservas');
+            tbody.innerHTML = '';
+
+            reservas.forEach(reserva => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${reserva.qr}</td>
+                    <td>${reserva.producto}</td>
+                    <td>${reserva.cantidad}</td>
+                    <td>${reserva.unidad}</td>
+                    <td>${reserva.orden}</td>
+                    <td>${reserva.cliente}</td>
+                    <td>${reserva.fecha}</td>
+                    <td><span class="status-badge status-reserva">${reserva.estado}</span></td>
+                `;
+            });
+        }
+
+        // SALIDA A PRODUCCIÓN
+        document.getElementById('scanner-produccion').addEventListener('input', function(e) {
+            const qr = e.target.value.trim();
+            if (qr.includes('serial=')) {
+                const serial = qr.split('serial=')[1].split('&')[0] || qr.split('serial=')[1];
+                e.target.value = serial;
+                mostrarInfoProduccion(serial);
+            }
+        });
+
+        function mostrarInfoProduccion(qr) {
+            const entrada = entradas.find(ent => ent.qr === qr);
+            const infoBox = document.getElementById('info-produccion');
+
+            if (!entrada) {
+                infoBox.style.display = 'block';
+                infoBox.innerHTML = '<strong>❌ Error:</strong> Este código QR no tiene entrada registrada.';
+                infoBox.style.background = '#f8d7da';
+                infoBox.style.borderColor = '#dc3545';
+                return;
+            }
+
+            const disponible = calcularDisponible(qr);
+            infoBox.style.display = 'block';
+            infoBox.style.background = '#e7f3ff';
+            infoBox.style.borderColor = '#2196F3';
+            infoBox.innerHTML = `
+                <strong>📦 Producto:</strong> ${entrada.producto}<br>
+                <strong>📊 Disponible para producción:</strong> ${disponible} ${entrada.unidad}
+            `;
+        }
+
+        function previewFoto(tipo) {
+            const input = document.getElementById('foto-' + tipo);
+            const preview = document.getElementById('preview-' + tipo);
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function registrarSalidaProduccion() {
+            const qr = document.getElementById('scanner-produccion').value.trim();
+            const cantidad = parseFloat(document.getElementById('cantidad-produccion').value);
+            const orden = document.getElementById('orden-produccion').value.trim();
+            const responsable = document.getElementById('responsable-produccion').value.trim();
+            const foto = document.getElementById('foto-produccion').files[0];
+            const notas = document.getElementById('notas-produccion').value.trim();
+
+            if (!qr || !cantidad || !orden || !responsable) {
+                alert('⚠️ Por favor completa todos los campos obligatorios');
+                return;
+            }
+
+            if (!foto) {
+                alert('⚠️ Por favor captura la foto de entrega');
+                return;
+            }
+
+            const entrada = entradas.find(ent => ent.qr === qr);
+            if (!entrada) {
+                alert('❌ Este código QR no tiene entrada registrada');
+                return;
+            }
+
+            const disponible = calcularDisponible(qr);
+            if (cantidad > disponible) {
+                alert(`❌ No hay suficiente disponible. Disponible: ${disponible} ${entrada.unidad}`);
+                return;
+            }
+
+            // Convertir foto a base64
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const produccion = {
+                    qr: qr,
+                    producto: entrada.producto,
+                    cantidad: cantidad,
+                    unidad: entrada.unidad,
+                    orden: orden,
+                    responsable: responsable,
+                    foto: e.target.result,
+                    notas: notas,
+                    fecha: new Date().toLocaleString('es-MX'),
+                    estado: 'En Producción'
+                };
+
+                salidaProduccion.push(produccion);
+                guardarDatos();
+                actualizarTablaProduccion();
+                actualizarResumen();
+                limpiarFormularioProduccion();
+                alert('✅ Salida a producción registrada correctamente');
+            };
+            reader.readAsDataURL(foto);
+        }
+
+        function limpiarFormularioProduccion() {
+            document.getElementById('scanner-produccion').value = '';
+            document.getElementById('cantidad-produccion').value = '';
+            document.getElementById('orden-produccion').value = '';
+            document.getElementById('responsable-produccion').value = '';
+            document.getElementById('foto-produccion').value = '';
+            document.getElementById('preview-produccion').style.display = 'none';
+            document.getElementById('notas-produccion').value = '';
+            document.getElementById('info-produccion').style.display = 'none';
+            document.getElementById('scanner-produccion').focus();
+        }
+
+        function actualizarTablaProduccion() {
+            const tbody = document.getElementById('tbody-produccion');
+            tbody.innerHTML = '';
+
+            salidaProduccion.forEach(prod => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${prod.qr}</td>
+                    <td>${prod.producto}</td>
+                    <td>${prod.cantidad}</td>
+                    <td>${prod.unidad}</td>
+                    <td>${prod.orden}</td>
+                    <td>${prod.responsable}</td>
+                    <td>${prod.fecha}</td>
+                    <td><img src="${prod.foto}" style="max-width:50px; cursor:pointer;" onclick="window.open('${prod.foto}')"></td>
+                    <td><span class="status-badge status-produccion">${prod.estado}</span></td>
+                `;
+            });
+        }
+
+        // SALIDA A CLIENTE
+        document.getElementById('scanner-salida').addEventListener('input', function(e) {
+            const qr = e.target.value.trim();
+            if (qr.includes('serial=')) {
+                const serial = qr.split('serial=')[1].split('&')[0] || qr.split('serial=')[1];
+                e.target.value = serial;
+                mostrarInfoSalida(serial);
+            }
+        });
+
+        function mostrarInfoSalida(qr) {
+            const entrada = entradas.find(ent => ent.qr === qr);
+            const infoBox = document.getElementById('info-salida');
+
+            if (!entrada) {
+                infoBox.style.display = 'block';
+                infoBox.innerHTML = '<strong>❌ Error:</strong> Este código QR no tiene entrada registrada.';
+                infoBox.style.background = '#f8d7da';
+                infoBox.style.borderColor = '#dc3545';
+                return;
+            }
+
+            const disponible = calcularDisponible(qr);
+            infoBox.style.display = 'block';
+            infoBox.style.background = '#e7f3ff';
+            infoBox.style.borderColor = '#2196F3';
+            infoBox.innerHTML = `
+                <strong>📦 Producto:</strong> ${entrada.producto}<br>
+                <strong>📊 Disponible para salida:</strong> ${disponible} ${entrada.unidad}
+            `;
+        }
+
+        function registrarSalida() {
+            const qr = document.getElementById('scanner-salida').value.trim();
+            const cantidad = parseFloat(document.getElementById('cantidad-salida').value);
+            const cliente = document.getElementById('cliente-salida').value.trim();
+            const factura = document.getElementById('factura-salida').value.trim();
+            const transportista = document.getElementById('transportista-salida').value.trim();
+            const notas = document.getElementById('notas-salida').value.trim();
+
+            if (!qr || !cantidad || !cliente || !factura || !transportista) {
+                alert('⚠️ Por favor completa todos los campos obligatorios');
+                return;
+            }
+
+            const entrada = entradas.find(ent => ent.qr === qr);
+            if (!entrada) {
+                alert('❌ Este código QR no tiene entrada registrada');
+                return;
+            }
+
+            const disponible = calcularDisponible(qr);
+            if (cantidad > disponible) {
+                alert(`❌ No hay suficiente disponible. Disponible: ${disponible} ${entrada.unidad}`);
+                return;
+            }
+
+            const salida = {
+                qr: qr,
+                producto: entrada.producto,
+                cantidad: cantidad,
+                unidad: entrada.unidad,
+                cliente: cliente,
+                factura: factura,
+                transportista: transportista,
+                notas: notas,
+                fecha: new Date().toLocaleString('es-MX'),
+                estado: 'Entregado'
+            };
+
+            salidas.push(salida);
+            guardarDatos();
+            actualizarTablaSalidas();
+            actualizarResumen();
+            limpiarFormularioSalida();
+            alert('✅ Salida a cliente registrada correctamente');
+        }
+
+        function limpiarFormularioSalida() {
+            document.getElementById('scanner-salida').value = '';
+            document.getElementById('cantidad-salida').value = '';
+            document.getElementById('cliente-salida').value = '';
+            document.getElementById('factura-salida').value = '';
+            document.getElementById('transportista-salida').value = '';
+            document.getElementById('notas-salida').value = '';
+            document.getElementById('info-salida').style.display = 'none';
+            document.getElementById('scanner-salida').focus();
+        }
+
+        function actualizarTablaSalidas() {
+            const tbody = document.getElementById('tbody-salidas');
+            tbody.innerHTML = '';
+
+            salidas.forEach(salida => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${salida.qr}</td>
+                    <td>${salida.producto}</td>
+                    <td>${salida.cantidad}</td>
+                    <td>${salida.unidad}</td>
+                    <td>${salida.cliente}</td>
+                    <td>${salida.factura}</td>
+                    <td>${salida.transportista}</td>
+                    <td>${salida.fecha}</td>
+                    <td><span class="status-badge status-salida">${salida.estado}</span></td>
+                `;
+            });
+        }
+
+        // RESUMEN
+        function actualizarResumen() {
+            const tbody = document.getElementById('tbody-resumen');
+            tbody.innerHTML = '';
+
+            entradas.forEach(entrada => {
+                const totalReservado = reservas
+                    .filter(res => res.qr === entrada.qr)
+                    .reduce((sum, res) => sum + res.cantidad, 0);
+
+                const totalProduccion = salidaProduccion
+                    .filter(prod => prod.qr === entrada.qr)
+                    .reduce((sum, prod) => sum + prod.cantidad, 0);
+
+                const totalSalidas = salidas
+                    .filter(sal => sal.qr === entrada.qr)
+                    .reduce((sum, sal) => sum + sal.cantidad, 0);
+
+                const disponible = entrada.cantidad - totalReservado - totalProduccion - totalSalidas;
+
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${entrada.qr}</td>
+                    <td>${entrada.producto}</td>
+                    <td>${entrada.cantidad}</td>
+                    <td>${totalReservado}</td>
+                    <td>${totalProduccion}</td>
+                    <td>${totalSalidas}</td>
+                    <td><strong>${disponible}</strong></td>
+                    <td>${entrada.unidad}</td>
+                `;
+            });
+        }
+
+        function actualizarTodasLasTablas() {
+            actualizarTablaEntradas();
+            actualizarTablaReservas();
+            actualizarTablaProduccion();
+            actualizarTablaSalidas();
+            actualizarResumen();
+        }
+
+        // Inicializar
+        cargarDatos();
+    </script>
 </body>
 </html>
