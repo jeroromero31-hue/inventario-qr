@@ -1243,7 +1243,13 @@
             actualizarTablaEntradas();
             verificarBloqueos();
             limpiarFormularioEntrada();
-            alert('✅ Entrada registrada correctamente en Airtable');
+            
+            // Sugerir siguiente paso
+            if (tipoSeleccionado === 'producto-terminado') {
+                alert('✅ Entrada registrada correctamente en Airtable\n\n📋 Siguiente paso: Ve al tab "Reserva" para reservar este producto.');
+            } else {
+                alert('✅ Entrada registrada correctamente en Airtable\n\n📋 Siguiente paso: Ve al tab "Reserva" para reservar materia prima.');
+            }
         }
 
         function limpiarFormularioEntrada() {
@@ -1284,33 +1290,63 @@
             
             // RESERVA: Se habilita con CUALQUIER entrada
             const tabReserva = document.getElementById('tab-reserva');
-            tabReserva.disabled = !hayEntradas;
-            tabReserva.style.opacity = hayEntradas ? '1' : '0.5';
-            tabReserva.style.cursor = hayEntradas ? 'pointer' : 'not-allowed';
+            if (hayEntradas) {
+                tabReserva.removeAttribute('disabled');
+                tabReserva.style.opacity = '1';
+                tabReserva.style.cursor = 'pointer';
+            } else {
+                tabReserva.setAttribute('disabled', 'true');
+                tabReserva.style.opacity = '0.5';
+                tabReserva.style.cursor = 'not-allowed';
+            }
             
             // SALIDA A PRODUCCIÓN: Solo para Materia Prima
             const tabProduccion = document.getElementById('tab-produccion');
-            tabProduccion.disabled = !hayMateriaPrima;
-            tabProduccion.style.opacity = hayMateriaPrima ? '1' : '0.5';
-            tabProduccion.style.cursor = hayMateriaPrima ? 'pointer' : 'not-allowed';
+            if (hayMateriaPrima) {
+                tabProduccion.removeAttribute('disabled');
+                tabProduccion.style.opacity = '1';
+                tabProduccion.style.cursor = 'pointer';
+            } else {
+                tabProduccion.setAttribute('disabled', 'true');
+                tabProduccion.style.opacity = '0.5';
+                tabProduccion.style.cursor = 'not-allowed';
+            }
             
             // SALIDA: Se habilita con CUALQUIER entrada
             const tabSalida = document.getElementById('tab-salida');
-            tabSalida.disabled = !hayEntradas;
-            tabSalida.style.opacity = hayEntradas ? '1' : '0.5';
-            tabSalida.style.cursor = hayEntradas ? 'pointer' : 'not-allowed';
+            if (hayEntradas) {
+                tabSalida.removeAttribute('disabled');
+                tabSalida.style.opacity = '1';
+                tabSalida.style.cursor = 'pointer';
+            } else {
+                tabSalida.setAttribute('disabled', 'true');
+                tabSalida.style.opacity = '0.5';
+                tabSalida.style.cursor = 'not-allowed';
+            }
         }
 
         function switchTab(tabName) {
+            // Ocultar todos los contenidos
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
+            
+            // Desactivar todos los botones
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
             });
 
-            document.getElementById('tab-' + tabName).classList.add('active');
-            event.target.classList.add('active');
+            // Mostrar el contenido del tab seleccionado
+            const tabContent = document.getElementById('tab-' + tabName);
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+            
+            // Activar el botón correspondiente
+            const tabButton = document.querySelector(`[onclick="switchTab('${tabName}')"]`);
+            if (tabButton) {
+                tabButton.classList.add('active');
+            }
         }
 
         // SCANNER RESERVA
