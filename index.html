@@ -812,31 +812,51 @@
         let salidas = [];
         let productosCache = {};
 
-        // FUNCIÓN PARA ACTUALIZAR AIRTABLE (COMPRAS - ENTRADA)
-        async function registrarEntradaEnAirtable(serial) {
+        // FUNCIÓN PARA ACTUALIZAR AIRTABLE (COMPRAS - ENTRADA) - CORREGIDA
+        async function registrarEntradaEnAirtable(serial, cantidad) {
             try {
+                // Timeout de 10 segundos
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                
                 // 1. Buscar el registro en COMPRAS por el serial
-                const urlBuscar = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_COMPRAS}?filterByFormula={Serie}='${serial}'&maxRecords=1`;
+                const formula = encodeURIComponent(`{Serie}='${serial}'`);
+                const urlBuscar = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_COMPRAS}?filterByFormula=${formula}&maxRecords=1`;
+                
+                console.log('Buscando en Airtable:', urlBuscar);
                 
                 const responseBuscar = await fetch(urlBuscar, {
                     headers: {
                         'Authorization': `Bearer ${AIRTABLE_TOKEN}`
-                    }
+                    },
+                    signal: controller.signal
                 });
 
+                clearTimeout(timeoutId);
+
+                if (!responseBuscar.ok) {
+                    const errorText = await responseBuscar.text();
+                    console.error('Error HTTP:', responseBuscar.status, errorText);
+                    alert(`❌ Error HTTP ${responseBuscar.status}`);
+                    return false;
+                }
+
                 const dataBuscar = await responseBuscar.json();
+                console.log('Respuesta de Airtable:', dataBuscar);
                 
                 if (dataBuscar.records && dataBuscar.records.length > 0) {
                     const recordId = dataBuscar.records[0].id;
                     
                     // Verificar si ya tiene entrada aplicada
                     if (dataBuscar.records[0].fields['Entrada aplicada'] === true) {
-                        alert('⚠️ Este producto ya tiene entrada registrada en Airtable');
+                        alert('⚠️ Este producto ya tiene entrada registrada');
                         return false;
                     }
                     
-                    // 2. Actualizar el registro
+                    // 2. Actualizar el registro con la CANTIDAD
                     const urlActualizar = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_COMPRAS}/${recordId}`;
+                    
+                    console.log('Actualizando registro:', recordId, 'con cantidad:', cantidad);
                     
                     const responseActualizar = await fetch(urlActualizar, {
                         method: 'PATCH',
@@ -846,26 +866,40 @@
                         },
                         body: JSON.stringify({
                             fields: {
-                                'Entrada QR': serial,
-                                'Entrada aplicada': true,
-                                'Fecha entrada': new Date().toISOString()
+                                'Entrada QR': cantidad, // LA CANTIDAD (número)
+                                'Entrada aplicada': true
                             }
                         })
                     });
 
                     if (responseActualizar.ok) {
+                        console.log('✅ Registro actualizado en Airtable');
                         return true;
                     } else {
-                        console.error('Error al actualizar Airtable');
+                        const errorData = await responseActualizar.json();
+                        console.error('Error al actualizar:', errorData);
+                        
+                        let mensajeError = 'Error desconocido';
+                        if (errorData.error && errorData.error.message) {
+                            mensajeError = errorData.error.message;
+                        }
+                        
+                        alert('❌ Error de Airtable: ' + mensajeError);
                         return false;
                     }
                 } else {
-                    alert('❌ No se encontró el producto en Airtable (tabla Compras)');
+                    console.error('No se encontró el serial:', serial);
+                    alert('❌ No se encontró el producto con serial: ' + serial);
                     return false;
                 }
             } catch (error) {
-                console.error('Error al registrar entrada en Airtable:', error);
-                alert('❌ Error al conectar con Airtable. Intenta de nuevo.');
+                if (error.name === 'AbortError') {
+                    console.error('Timeout después de 10 segundos');
+                    alert('⏱️ La operación tardó demasiado. Verifica tu conexión a internet.');
+                } else {
+                    console.error('Error:', error);
+                    alert('❌ Error: ' + error.message);
+                }
                 return false;
             }
         }
@@ -1161,7 +1195,7 @@
 
             // ENVIAR A AIRTABLE
             alert('⏳ Registrando entrada en Airtable...');
-            const exito = await registrarEntradaEnAirtable(serial);
+            const exito = await registrarEntradaEnAirtable(serial, cantidad);
             
             if (!exito) {
                 return; // Si falla, no continuar
