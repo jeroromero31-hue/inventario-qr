@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1283,8 +1282,13 @@
             const hayEntradas = entradas.length > 0;
             const hayMateriaPrima = entradas.some(e => e.tipo === 'materia-prima');
             
-            document.getElementById('tab-reserva').disabled = !hayMateriaPrima;
+            // RESERVA: Se habilita con CUALQUIER entrada (Materia Prima o Producto Terminado)
+            document.getElementById('tab-reserva').disabled = !hayEntradas;
+            
+            // SALIDA A PRODUCCIÓN: Solo para Materia Prima
             document.getElementById('tab-produccion').disabled = !hayMateriaPrima;
+            
+            // SALIDA: Se habilita con CUALQUIER entrada
             document.getElementById('tab-salida').disabled = !hayEntradas;
         }
 
@@ -1311,11 +1315,11 @@
                         const serial = value.split('serial=')[1].split('&')[0] || value.split('serial=')[1];
                         e.target.value = serial;
                         
-                        const entrada = entradas.find(ent => ent.serial === serial && ent.tipo === 'materia-prima');
+                        const entrada = entradas.find(ent => ent.serial === serial);
                         const descripBox = document.getElementById('descripcion-reserva');
                         
                         if (!entrada) {
-                            alert('❌ Este serial no tiene entrada registrada como Materia Prima');
+                            alert('❌ Este serial no tiene entrada registrada');
                             descripBox.classList.remove('active');
                             return;
                         }
@@ -1361,9 +1365,9 @@
                 return;
             }
 
-            const entrada = entradas.find(ent => ent.serial === serial && ent.tipo === 'materia-prima');
+            const entrada = entradas.find(ent => ent.serial === serial);
             if (!entrada) {
-                alert('❌ Este serial no tiene entrada registrada como Materia Prima');
+                alert('❌ Este serial no tiene entrada registrada');
                 return;
             }
 
